@@ -10,15 +10,18 @@ const CAMERA_SEGUIR_JOGADOR = true;
 const TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS = 10;
 const TEMPO_PISCAR_SEGUNDOS = 5;
 const TAMANHO_MINIMO_ARENA = 7;
+const TEMPO_TOTAL_SEGUNDOS = 120; // NOVO: 2 minutos de jogo por padrão
 
 export class GameManager {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.players = [];
-        this.fechamentoAtivo = true;
+        this.fechamentoAtivo = false; // Alterado para começar como false
         this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60; // em frames
         this.areaPiscaTimer = -1;
+        this.tempoRestante = TEMPO_TOTAL_SEGUNDOS * 60; // NOVO: Tempo restante do jogo em frames
+        this.hudElement = document.getElementById('timer-display'); // NOVO: Elemento do HUD
     }
 
     iniciarJogo() {
@@ -35,6 +38,16 @@ export class GameManager {
     }
 
     atualizarEstado() {
+        // NOVO: Decrementa o tempo restante do jogo
+        if (this.tempoRestante > 0) {
+            this.tempoRestante--;
+        } else {
+            // Quando o tempo termina, inicia o fechamento da arena
+            if (!this.fechamentoAtivo) {
+                this.fechamentoAtivo = true;
+            }
+        }
+
         this.players.forEach(player => {
             player.mover();
             // Lógica para coletar power-ups
@@ -47,6 +60,7 @@ export class GameManager {
                     player.y > powerup.y - TAMANHO_BLOCO / 2 &&
                     player.y < powerup.y + TAMANHO_BLOCO / 2
                 ) {
+                    // Adicionando a chamada do método correto para o novo power-up
                     powerup.applyEffect(player);
                     powerups.splice(i, 1);
                 }
@@ -84,6 +98,17 @@ export class GameManager {
         }
     }
 
+    // NOVO: Método para atualizar o HUD
+    atualizarHUD() {
+        const segundos = Math.floor(this.tempoRestante / 60);
+        const minutos = Math.floor(segundos / 60);
+        const segundosFormatados = (segundos % 60).toString().padStart(2, '0');
+
+        if (this.hudElement) {
+            this.hudElement.textContent = `${minutos}:${segundosFormatados}`;
+        }
+    }
+
     configurarCamera() {
         let cameraX = 0;
         let cameraY = 0;
@@ -112,6 +137,7 @@ export class GameManager {
         const arenaFechando = this.areaPiscaTimer > 0;
         desenharTudo(this.ctx, mapa, this.players, bombas, explosoes, powerups, arenaFechando, this.areaPiscaTimer);
         this.ctx.restore();
+        this.atualizarHUD(); // NOVO: Chama a atualização do HUD
         requestAnimationFrame(() => this.gameLoop());
     }
 }

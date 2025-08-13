@@ -2,6 +2,7 @@
 import { TAMANHO_BLOCO, LARGURA_MAPA, ALTURA_MAPA, fechamentoNivel } from './map.js';
 import { Block } from './powerup.js'; // A classe Block agora é importada de powerup.js
 
+// Novo parâmetro tempoRestante
 export function desenharTudo(ctx, mapa, players, bombas, explosoes, powerups, arenaFechando, areaPiscaTimer) {
     desenharFundo(ctx, LARGURA_MAPA, ALTURA_MAPA);
     desenharMapa(ctx, mapa);
@@ -129,7 +130,7 @@ function desenharPowerups(ctx, powerups) {
             // Desenha o novo power-up de velocidade
             ctx.fillStyle = '#6F4E37'; // Cor marrom (café) para o power-up de velocidade
             ctx.fillRect(p.x - TAMANHO_BLOCO * 0.2, p.y - TAMANHO_BLOCO * 0.2, TAMANHO_BLOCO * 0.4, TAMANHO_BLOCO * 0.4);
-        } else if (p.type === 'bombCount') { // NOVO: Renderiza o power-up de quantidade de bombas
+        } else if (p.type === 'bombCount') { // NOVO: Renderiza o power-up de contagem de bombas
             ctx.fillStyle = '#95a5a6'; // Cor cinza para o power-up de contagem de bombas
             ctx.beginPath();
             ctx.arc(p.x, p.y, TAMANHO_BLOCO * 0.3, 0, Math.PI * 2);

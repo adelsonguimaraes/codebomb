@@ -95,6 +95,5 @@ export class Player {
     // NOVO: Método para aumentar a quantidade máxima de bombas
     aumentarContadorBombas() {
         this.maxBombas += 1;
-        console.log("Aumentou o contador de bombas para:" + this.maxBombas);
     }
 }
