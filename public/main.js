@@ -5,8 +5,8 @@ import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } 
 import { desenharTudo } from './render.js';
 
 // --- Configurações Globais do Jogo ---
-const ZOOM_NIVEL = 1.0; // Constante para controlar o zoom da câmera
-const CAMERA_SEGUIR_JOGADOR = false; // Define se a câmera segue o jogador (true) ou fica fixa (false)
+const ZOOM_NIVEL = 1.5; // Constante para controlar o zoom da câmera
+const CAMERA_SEGUIR_JOGADOR = true; // Define se a câmera segue o jogador (true) ou fica fixa (false)
 
 // --- Configurações do Fechamento de Arena ---
 let FECHAMENTO_ARENA_ATIVO = true;

@@ -1,5 +1,5 @@
 // bomb.js - Lógica de bombas e explosões
-import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa } from './map.js';
+import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, Block } from './map.js';
 import { players } from './main.js'; // Importando a lista de jogadores
 
 export const TEMPO_BOMBA = 120; // Tempo em frames antes da explosão
@@ -69,8 +69,10 @@ export class Bomb {
 
         areaExplosao.forEach(pos => {
             if (pos.x >= 0 && pos.x < LARGURA_MAPA && pos.y >= 0 && pos.y < ALTURA_MAPA) {
-                if (mapa[pos.y][pos.x] === 3) {
-                    mapa[pos.y][pos.x] = 0;
+                // Checa se o bloco é destrutível (type 3)
+                const bloco = mapa[pos.y][pos.x];
+                if (bloco instanceof Block && bloco.type === 3) {
+                    bloco.type = 0; // Torna o bloco vazio
                 }
                 // Cria uma nova instância da classe Explosion
                 explosoes.push(new Explosion(pos.x, pos.y));

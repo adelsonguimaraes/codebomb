@@ -1,73 +1,85 @@
-// map.js - Lógica de geração do mapa
+// map.js - Lógica do mapa e blocos
+import { players } from './main.js';
+
 export const LARGURA_MAPA = 20;
 export const ALTURA_MAPA = 20;
 export const TAMANHO_BLOCO = 40;
-export const CHANCE_BLOCO_DESTRUTIVEL = 0.6;
 
+// O mapa agora armazena instâncias da classe Block
 export const mapa = [];
-export let fechamentoNivel = 0; // Nova variável para controlar o nível de fechamento
 
-// Inicializa o mapa apenas com as paredes fixas
-for (let y = 0; y < ALTURA_MAPA; y++) {
-    mapa[y] = [];
-    for (let x = 0; x < LARGURA_MAPA; x++) {
-        // Bloco 1: Parede indestrutível nas bordas do mapa e em padrão de xadrez
-        if (x === 0 || x === LARGURA_MAPA - 1 || y === 0 || y === ALTURA_MAPA - 1 || (x % 2 === 1 && y % 2 === 1)) {
-            mapa[y][x] = 1;
-        } else {
-            // Bloco 0: Espaços vazios iniciais
-            mapa[y][x] = 0;
+// Classe para representar um bloco no mapa
+export class Block {
+    constructor(x, y, type) {
+        this.x = x * TAMANHO_BLOCO;
+        this.y = y * TAMANHO_BLOCO;
+        this.type = type; // 0: vazio, 1: indestrutível (mapa fixo), 2: indestrutível (fechamento), 3: destrutível
+    }
+}
+
+// Inicializa a estrutura básica do mapa com paredes e espaços vazios
+function inicializarMapa() {
+    for (let y = 0; y < ALTURA_MAPA; y++) {
+        mapa[y] = [];
+        for (let x = 0; x < LARGURA_MAPA; x++) {
+            if (x === 0 || x === LARGURA_MAPA - 1 || y === 0 || y === ALTURA_MAPA - 1 || (x % 2 === 0 && y % 2 === 0)) {
+                mapa[y][x] = new Block(x, y, 1); // Parede indestrutível do mapa fixo
+            } else {
+                mapa[y][x] = new Block(x, y, 0); // Espaço vazio
+            }
         }
     }
 }
 
-// Encontra uma posição inicial aleatória e segura para o jogador
+inicializarMapa();
+
 export function encontrarPosicaoInicialSegura() {
-    let x, y;
-    let encontrado = false;
-    while (!encontrado) {
-        // Pega uma posição aleatória, garantindo que não seja nas bordas ou em paredes fixas
-        x = Math.floor(Math.random() * (LARGURA_MAPA - 2)) + 1;
-        y = Math.floor(Math.random() * (ALTURA_MAPA - 2)) + 1;
-
-        // Checa se a posição é um espaço vazio
-        if (mapa[y][x] === 0) {
-            encontrado = true;
-        }
-    }
-    return { x, y };
-}
-
-// Gera os blocos destrutíveis após as posições dos jogadores serem definidas
-export function gerarBlocosDestrutiveis(posicoesJogadores) {
     for (let y = 1; y < ALTURA_MAPA - 1; y++) {
         for (let x = 1; x < LARGURA_MAPA - 1; x++) {
-            // Se for um espaço vazio e não for perto de nenhum jogador, pode ser um bloco destrutível
-            if (mapa[y][x] === 0) {
-                let pertoDeJogador = false;
-                posicoesJogadores.forEach(pos => {
-                    if (Math.abs(pos.x - x) <= 1 && Math.abs(pos.y - y) <= 1) {
-                        pertoDeJogador = true;
-                    }
-                });
+            if (mapa[y][x].type === 0) {
+                return { x, y };
+            }
+        }
+    }
+    return { x: 1, y: 1 };
+}
 
-                if (!pertoDeJogador) {
-                    mapa[y][x] = Math.random() < CHANCE_BLOCO_DESTRUTIVEL ? 3 : 0;
-                }
+export function gerarBlocosDestrutiveis(posicoesIniciais) {
+    for (let y = 1; y < ALTURA_MAPA - 1; y++) {
+        for (let x = 1; x < LARGURA_MAPA - 1; x++) {
+            const isPosicaoInicial = posicoesIniciais.some(p => p.x === x && p.y === y);
+            const isPosicaoAoLado = posicoesIniciais.some(p =>
+                (p.x === x + 1 && p.y === y) ||
+                (p.x === x - 1 && p.y === y) ||
+                (p.x === x && p.y === y + 1) ||
+                (p.x === x && p.y === y - 1)
+            );
+            if (mapa[y][x].type === 0 && !isPosicaoInicial && !isPosicaoAoLado && Math.random() < 0.7) {
+                mapa[y][x].type = 3; // Bloco destrutível
             }
         }
     }
 }
 
-// Função para fechar as bordas da arena em um nível
+// Fechamento de Arena
+export let fechamentoNivel = 0;
+
 export function fecharArena() {
-    const nivel = fechamentoNivel;
-    for (let y = nivel; y < ALTURA_MAPA - nivel; y++) {
-        for (let x = nivel; x < LARGURA_MAPA - nivel; x++) {
-            if (y === nivel || y === ALTURA_MAPA - 1 - nivel || x === nivel || x === LARGURA_MAPA - 1 - nivel) {
-                mapa[y][x] = 1; // Coloca uma parede indestrutível
-            }
+    if (fechamentoNivel >= LARGURA_MAPA / 2) return;
+
+    // Lógica para colocar as novas paredes (tipo 2)
+    for (let y = 0; y < ALTURA_MAPA; y++) {
+        if (y >= fechamentoNivel && y < ALTURA_MAPA - fechamentoNivel) {
+            mapa[y][fechamentoNivel].type = 2; // Novo tipo de bloco para fechamento
+            mapa[y][LARGURA_MAPA - 1 - fechamentoNivel].type = 2; // Novo tipo de bloco para fechamento
         }
     }
+    for (let x = 0; x < LARGURA_MAPA; x++) {
+        if (x >= fechamentoNivel && x < LARGURA_MAPA - fechamentoNivel) {
+            mapa[fechamentoNivel][x].type = 2; // Novo tipo de bloco para fechamento
+            mapa[ALTURA_MAPA - 1 - fechamentoNivel][x].type = 2; // Novo tipo de bloco para fechamento
+        }
+    }
+
     fechamentoNivel++;
 }

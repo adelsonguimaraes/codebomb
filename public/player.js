@@ -1,5 +1,5 @@
 // player.js - Classe do jogador e input
-import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa } from './map.js';
+import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, Block } from './map.js';
 import { bombas, Bomb } from './bomb.js'; // Importa a classe Bomb
 
 export const VELOCIDADE_JOGADOR = 2; // Velocidade de movimento em pixels
@@ -30,7 +30,9 @@ export class Player {
             return false;
         }
 
-        if (mapa[mapaY][mapaX] === 1 || mapa[mapaY][mapaX] === 3) {
+        const bloco = mapa[mapaY][mapaX];
+        // CORREÇÃO: A lógica agora verifica também o novo tipo de bloco 2
+        if (bloco instanceof Block && (bloco.type === 1 || bloco.type === 2 || bloco.type === 3)) {
             return false;
         }
 
