@@ -1,5 +1,6 @@
 // bomb.js - Lógica de bombas e explosões
 import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa } from './map.js';
+import { players } from './player.js'; // Importando a lista de jogadores
 
 export const TEMPO_BOMBA = 120; // Tempo em frames antes da explosão
 export const TAMANHO_EXPLOSAO = 1; // Alcance da explosão (1 bloco para cada lado)
@@ -10,16 +11,39 @@ export function plantarBomba(player) {
     const gridX = Math.floor(player.x / TAMANHO_BLOCO);
     const gridY = Math.floor(player.y / TAMANHO_BLOCO);
 
+    // Verifica se já existe uma bomba na mesma posição
     const bombaExistente = bombas.some(b => b.gridX === gridX && b.gridY === gridY);
     if (bombaExistente) return;
 
+    // Adiciona a bomba com as coordenadas centralizadas no bloco
     bombas.push({
         gridX: gridX,
         gridY: gridY,
         x: gridX * TAMANHO_BLOCO + TAMANHO_BLOCO / 2,
         y: gridY * TAMANHO_BLOCO + TAMANHO_BLOCO / 2,
         timer: TEMPO_BOMBA,
+        podePassar: true,
+        colocadorId: player.id,
     });
+
+    // Incrementa a contagem de bombas ativas do jogador
+    player.bombasAtivas++;
+}
+
+export function atualizarBombas() {
+    for (let i = bombas.length - 1; i >= 0; i--) {
+        bombas[i].timer--;
+        if (bombas[i].timer <= 0) {
+            // Encontra o jogador que plantou a bomba e decrementa a contagem
+            const playerQuePlantou = players.find(p => p.id === bombas[i].colocadorId);
+            if (playerQuePlantou) {
+                playerQuePlantou.bombasAtivas--;
+            }
+
+            explodirBomba(bombas[i]);
+            bombas.splice(i, 1);
+        }
+    }
 }
 
 function explodirBomba(bomba) {
@@ -43,16 +67,6 @@ function explodirBomba(bomba) {
             });
         }
     });
-}
-
-export function atualizarBombas() {
-    for (let i = bombas.length - 1; i >= 0; i--) {
-        bombas[i].timer--;
-        if (bombas[i].timer <= 0) {
-            explodirBomba(bombas[i]);
-            bombas.splice(i, 1);
-        }
-    }
 }
 
 export function atualizarExplosoes() {

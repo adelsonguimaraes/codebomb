@@ -1,6 +1,6 @@
 // player.js - Lógica do jogador e input
 import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa } from './map.js';
-import { bombas, plantarBomba } from './bomb.js';
+import { bombas } from './bomb.js';
 
 export const VELOCIDADE_JOGADOR = 2; // Velocidade de movimento em pixels
 export const players = [];
@@ -13,8 +13,8 @@ window.addEventListener('keyup', (e) => {
     teclasPressionadas[e.key.toLowerCase()] = false;
 });
 
-// Função que checa a colisão com blocos do mapa
-function podeMover(x, y) {
+// Função que checa a colisão com blocos do mapa e com bombas
+function podeMover(x, y, player) {
     const mapaX = Math.floor(x / TAMANHO_BLOCO);
     const mapaY = Math.floor(y / TAMANHO_BLOCO);
 
@@ -26,8 +26,13 @@ function podeMover(x, y) {
         return false;
     }
 
-    const temBomba = bombas.some(b => b.gridX === mapaX && b.gridY === mapaY);
+    // Verifica colisão com bombas, mas permite passar pela que foi plantada
+    const temBomba = bombas.find(b => b.gridX === mapaX && b.gridY === mapaY);
     if (temBomba) {
+        // Se a bomba foi plantada pelo jogador e ele ainda pode atravessá-la, permite o movimento
+        if (temBomba.colocadorId === player.id && temBomba.podePassar) {
+            return true;
+        }
         return false;
     }
 
@@ -35,6 +40,9 @@ function podeMover(x, y) {
 }
 
 export function moverJogador(player) {
+    const playerTileX = Math.floor(player.x / TAMANHO_BLOCO);
+    const playerTileY = Math.floor(player.y / TAMANHO_BLOCO);
+
     let novoX = player.x;
     let novoY = player.y;
 
@@ -50,12 +58,20 @@ export function moverJogador(player) {
     if (teclasPressionadas['arrowright'] || teclasPressionadas['d']) {
         novoX += VELOCIDADE_JOGADOR;
     }
-    if (teclasPressionadas[' ']) {
-        plantarBomba(player);
-    }
 
-    if (podeMover(novoX, novoY)) {
+    if (podeMover(novoX, novoY, player)) {
+        // Atualiza a posição do jogador
         player.x = novoX;
         player.y = novoY;
+
+        // Se o jogador saiu do bloco da bomba, a bomba se torna uma parede
+        const novoTileX = Math.floor(player.x / TAMANHO_BLOCO);
+        const novoTileY = Math.floor(player.y / TAMANHO_BLOCO);
+        if (novoTileX !== playerTileX || novoTileY !== playerTileY) {
+            const bomba = bombas.find(b => b.gridX === playerTileX && b.gridY === playerTileY && b.colocadorId === player.id);
+            if (bomba) {
+                bomba.podePassar = false;
+            }
+        }
     }
 }

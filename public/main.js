@@ -1,7 +1,7 @@
 // main.js - Ponto de entrada do jogo
 import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, encontrarPosicaoInicialSegura, gerarBlocosDestrutiveis, fecharArena, fechamentoNivel } from './map.js';
 import { players, moverJogador } from './player.js';
-import { bombas, explosoes, atualizarBombas, atualizarExplosoes } from './bomb.js';
+import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } from './bomb.js';
 import { desenharTudo } from './render.js';
 
 // --- Configurações Globais do Jogo ---
@@ -22,6 +22,22 @@ let areaPiscaTimer = -1;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Objeto para rastrear teclas pressionadas
+const teclasPressionadas = {};
+
+// --- Event Listeners para controle do jogador ---
+window.addEventListener('keydown', (e) => {
+    teclasPressionadas[e.key.toLowerCase()] = true;
+    // Verifica se o jogador pode plantar uma bomba (se ele tem bombas disponíveis)
+    if (e.key === ' ' && players[0].bombasAtivas < players[0].maxBombas) {
+        plantarBomba(players[0]);
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    teclasPressionadas[e.key.toLowerCase()] = false;
+});
+
 // --- Inicialização do Jogo ---
 function iniciarJogo() {
     const posicaoInicial = encontrarPosicaoInicialSegura();
@@ -34,6 +50,8 @@ function iniciarJogo() {
         x: posicaoInicial.x * TAMANHO_BLOCO + TAMANHO_BLOCO / 2,
         y: posicaoInicial.y * TAMANHO_BLOCO + TAMANHO_BLOCO / 2,
         tamanho: TAMANHO_BLOCO * 0.8,
+        maxBombas: 1, // Variável que controla o máximo de bombas que o jogador pode ter
+        bombasAtivas: 0, // Variável que conta as bombas ativas
     });
 
     // Ajusta o tamanho do canvas para o modo de tela cheia
