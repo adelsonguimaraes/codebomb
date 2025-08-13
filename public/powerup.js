@@ -34,7 +34,7 @@ export class ExplosionRadiusPowerup extends Powerup {
     }
 }
 
-// CORREÇÃO: Nova classe de power-up para aumentar a velocidade
+// Power-up de aumento de velocidade
 export class SpeedPowerup extends Powerup {
     constructor(x, y) {
         super(x, y, 'speed');
@@ -42,5 +42,16 @@ export class SpeedPowerup extends Powerup {
 
     applyEffect(player) {
         player.aumentarVelocidade();
+    }
+}
+
+// NOVO: Power-up de aumento de quantidade de bombas
+export class BombCountPowerup extends Powerup {
+    constructor(x, y) {
+        super(x, y, 'bombCount');
+    }
+
+    applyEffect(player) {
+        player.aumentarContadorBombas();
     }
 }

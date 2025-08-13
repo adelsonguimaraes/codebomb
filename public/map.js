@@ -12,7 +12,8 @@ export const powerups = [];
 // Configuração para a distribuição de power-ups
 export const POWERUP_CONFIG = {
     explosionRadius: 5, // Quantidade de power-ups de raio de explosão
-    speed: 3 // NOVO: Quantidade de power-ups de velocidade
+    speed: 3, // Quantidade de power-ups de velocidade
+    bombCount: 3 // NOVO: Quantidade de power-ups de quantidade de bombas
 };
 
 // Classe para representar um bloco no mapa
@@ -81,9 +82,6 @@ export function gerarBlocosDestrutiveis(posicoesIniciais) {
                 const randomIndex = Math.floor(Math.random() * posicoesElegiveis.length);
                 const { x, y } = posicoesElegiveis.splice(randomIndex, 1)[0];
                 mapa[y][x].powerupType = type;
-
-                console.log(`Power-up ${type} gerado na posição (${x}, ${y})`);
-
             }
         }
     }

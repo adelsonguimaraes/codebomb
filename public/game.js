@@ -26,26 +26,12 @@ export class GameManager {
         const posicoesJogadores = [{ x: posicaoInicial.x, y: posicaoInicial.y }];
         gerarBlocosDestrutiveis(posicoesJogadores);
 
+        // A classe Player agora espera as coordenadas do grid, o offset é calculado internamente
         const player1 = new Player(1, posicaoInicial.x * TAMANHO_BLOCO, posicaoInicial.y * TAMANHO_BLOCO);
         this.players.push(player1);
 
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-
-        // Adiciona os event listeners diretamente no GameManager para melhor encapsulamento
-        window.addEventListener('keydown', (e) => this.handleKeyDown(e));
-        window.addEventListener('keyup', (e) => this.handleKeyUp(e));
-    }
-
-    handleKeyDown(e) {
-        teclasPressionadas[e.key.toLowerCase()] = true;
-        if (e.key === ' ' && this.players[0].bombasAtivas < this.players[0].maxBombas) {
-            plantarBomba(this.players[0]);
-        }
-    }
-
-    handleKeyUp(e) {
-        teclasPressionadas[e.key.toLowerCase()] = false;
     }
 
     atualizarEstado() {
@@ -53,7 +39,6 @@ export class GameManager {
             player.mover();
             // Lógica para coletar power-ups
             for (let i = powerups.length - 1; i >= 0; i--) {
-                console.log(powerups[i]);
 
                 const powerup = powerups[i];
                 if (
@@ -69,6 +54,11 @@ export class GameManager {
         });
         atualizarBombas();
         atualizarExplosoes();
+
+        // NOVO: Verifica se a tecla de espaço está pressionada para plantar uma bomba
+        if (teclasPressionadas[' '] && this.players[0].bombasAtivas < this.players[0].maxBombas) {
+            plantarBomba(this.players[0]);
+        }
 
         if (this.fechamentoAtivo) {
             if (this.fechamentoTimer > 0) {
