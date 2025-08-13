@@ -1,6 +1,6 @@
 // player.js - Classe do jogador e input
 import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa } from './map.js';
-import { bombas } from './bomb.js';
+import { bombas, Bomb } from './bomb.js'; // Importa a classe Bomb
 
 export const VELOCIDADE_JOGADOR = 2; // Velocidade de movimento em pixels
 export const teclasPressionadas = {};
@@ -36,7 +36,8 @@ export class Player {
 
         const temBomba = bombas.find(b => b.gridX === mapaX && b.gridY === mapaY);
         if (temBomba) {
-            if (temBomba.colocadorId === this.id && temBomba.podePassar) {
+            // Verifica se o objeto é uma instância da classe Bomb
+            if (temBomba instanceof Bomb && temBomba.colocadorId === this.id && temBomba.podePassar) {
                 return true;
             }
             return false;
