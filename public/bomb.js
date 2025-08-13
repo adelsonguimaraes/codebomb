@@ -4,6 +4,23 @@ import { players } from './main.js'; // Importando a lista de jogadores
 
 export const TEMPO_BOMBA = 120; // Tempo em frames antes da explosão
 export const TAMANHO_EXPLOSAO = 1; // Alcance da explosão (1 bloco para cada lado)
+export const bombas = [];
+
+// Classe Explosion para encapsular a lógica de cada explosão
+export class Explosion {
+    constructor(x, y) {
+        this.x = x * TAMANHO_BLOCO;
+        this.y = y * TAMANHO_BLOCO;
+        this.timer = 20; // Tempo de vida da explosão em frames
+    }
+
+    atualizar() {
+        this.timer--;
+        // Retorna true se a explosão deve ser removida
+        return this.timer <= 0;
+    }
+}
+
 export const explosoes = [];
 
 // A classe Bomb agora encapsula as propriedades e o comportamento de uma bomba.
@@ -55,17 +72,12 @@ export class Bomb {
                 if (mapa[pos.y][pos.x] === 3) {
                     mapa[pos.y][pos.x] = 0;
                 }
-                explosoes.push({
-                    x: pos.x * TAMANHO_BLOCO,
-                    y: pos.y * TAMANHO_BLOCO,
-                    timer: 20,
-                });
+                // Cria uma nova instância da classe Explosion
+                explosoes.push(new Explosion(pos.x, pos.y));
             }
         });
     }
 }
-
-export const bombas = [];
 
 export function plantarBomba(player) {
     const gridX = Math.floor(player.x / TAMANHO_BLOCO);
@@ -90,8 +102,8 @@ export function atualizarBombas() {
 
 export function atualizarExplosoes() {
     for (let i = explosoes.length - 1; i >= 0; i--) {
-        explosoes[i].timer--;
-        if (explosoes[i].timer <= 0) {
+        // Chama o método atualizar() da explosão. Se retornar true, a explosão deve ser removida.
+        if (explosoes[i].atualizar()) {
             explosoes.splice(i, 1);
         }
     }
