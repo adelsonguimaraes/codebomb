@@ -1,6 +1,6 @@
 // bomb.js - Lógica de bombas e explosões
 import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa } from './map.js';
-import { players } from './player.js'; // Importando a lista de jogadores
+import { players } from './main.js'; // Importando a lista de jogadores
 
 export const TEMPO_BOMBA = 120; // Tempo em frames antes da explosão
 export const TAMANHO_EXPLOSAO = 1; // Alcance da explosão (1 bloco para cada lado)

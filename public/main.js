@@ -1,6 +1,6 @@
 // main.js - Ponto de entrada do jogo
 import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, encontrarPosicaoInicialSegura, gerarBlocosDestrutiveis, fecharArena, fechamentoNivel } from './map.js';
-import { players, moverJogador } from './player.js';
+import { Player, teclasPressionadas } from './player.js'; // Importa a nova classe Player e o objeto de teclas
 import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } from './bomb.js';
 import { desenharTudo } from './render.js';
 
@@ -22,8 +22,8 @@ let areaPiscaTimer = -1;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Objeto para rastrear teclas pressionadas
-const teclasPressionadas = {};
+// Array de jogadores
+export const players = [];
 
 // --- Event Listeners para controle do jogador ---
 window.addEventListener('keydown', (e) => {
@@ -45,14 +45,9 @@ function iniciarJogo() {
 
     gerarBlocosDestrutiveis(posicoesJogadores);
 
-    players.push({
-        id: 1, // ID do jogador
-        x: posicaoInicial.x * TAMANHO_BLOCO + TAMANHO_BLOCO / 2,
-        y: posicaoInicial.y * TAMANHO_BLOCO + TAMANHO_BLOCO / 2,
-        tamanho: TAMANHO_BLOCO * 0.8,
-        maxBombas: 1, // Variável que controla o máximo de bombas que o jogador pode ter
-        bombasAtivas: 0, // Variável que conta as bombas ativas
-    });
+    // Cria uma nova instância da classe Player
+    const player1 = new Player(1, posicaoInicial.x * TAMANHO_BLOCO, posicaoInicial.y * TAMANHO_BLOCO);
+    players.push(player1);
 
     // Ajusta o tamanho do canvas para o modo de tela cheia
     canvas.width = window.innerWidth;
@@ -62,7 +57,7 @@ function iniciarJogo() {
 // --- Funções de Atualização e Câmera ---
 function atualizarEstado() {
     // Lógica de movimento e ações do jogador
-    moverJogador(players[0]);
+    players.forEach(player => player.mover());
 
     // Lógica de bombas e explosões
     atualizarBombas();
