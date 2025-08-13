@@ -1,6 +1,5 @@
 // bomb.js - Lógica de bombas e explosões
 import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, Block } from './map.js';
-import { players } from './main.js'; // Importando a lista de jogadores
 
 export const TEMPO_BOMBA = 120; // Tempo em frames antes da explosão
 export const TAMANHO_EXPLOSAO = 1; // Alcance da explosão (1 bloco para cada lado)
@@ -32,13 +31,10 @@ export class Bomb {
         this.y = this.gridY * TAMANHO_BLOCO + TAMANHO_BLOCO / 2;
         this.timer = TEMPO_BOMBA;
         this.podePassar = true;
-        this.colocadorId = player.id;
 
-        // Incrementa a contagem de bombas ativas do jogador que plantou
-        const playerQuePlantou = players.find(p => p.id === this.colocadorId);
-        if (playerQuePlantou) {
-            playerQuePlantou.bombasAtivas++;
-        }
+        // CORREÇÃO: Armazena a referência direta ao objeto player
+        this.playerRef = player;
+        this.playerRef.bombasAtivas++;
     }
 
     // Método para atualizar o estado da bomba (diminuir o timer)
@@ -53,11 +49,8 @@ export class Bomb {
 
     // Método para lidar com a explosão da bomba
     explodir() {
-        // Encontra o jogador que plantou a bomba e decrementa a contagem
-        const playerQuePlantou = players.find(p => p.id === this.colocadorId);
-        if (playerQuePlantou) {
-            playerQuePlantou.bombasAtivas--;
-        }
+        // CORREÇÃO: Usa a referência do jogador armazenada na classe
+        this.playerRef.bombasAtivas--;
 
         const areaExplosao = [
             { x: this.gridX, y: this.gridY },

@@ -25,24 +25,26 @@ export class Player {
     podeMover(x, y) {
         const mapaX = Math.floor(x / TAMANHO_BLOCO);
         const mapaY = Math.floor(y / TAMANHO_BLOCO);
+        const playerGridX = Math.floor(this.x / TAMANHO_BLOCO);
+        const playerGridY = Math.floor(this.y / TAMANHO_BLOCO);
+
 
         if (mapaX < 0 || mapaX >= LARGURA_MAPA || mapaY < 0 || mapaY >= ALTURA_MAPA) {
             return false;
         }
 
         const bloco = mapa[mapaY][mapaX];
-        // CORREÇÃO: A lógica agora verifica também o novo tipo de bloco 2
         if (bloco instanceof Block && (bloco.type === 1 || bloco.type === 2 || bloco.type === 3)) {
             return false;
         }
 
-        const temBomba = bombas.find(b => b.gridX === mapaX && b.gridY === mapaY);
-        if (temBomba) {
-            // Verifica se o objeto é uma instância da classe Bomb
-            if (temBomba instanceof Bomb && temBomba.colocadorId === this.id && temBomba.podePassar) {
-                return true;
+        // CORREÇÃO: A colisão com bombas agora só é verificada se o jogador estiver se movendo para um NOVO bloco.
+        // Isso permite que o jogador saia do bloco onde a bomba foi colocada.
+        if (mapaX !== playerGridX || mapaY !== playerGridY) {
+            const temBomba = bombas.find(b => b.gridX === mapaX && b.gridY === mapaY);
+            if (temBomba) {
+                return false;
             }
-            return false;
         }
 
         return true;
@@ -75,8 +77,10 @@ export class Player {
             const novoTileX = Math.floor(this.x / TAMANHO_BLOCO);
             const novoTileY = Math.floor(this.y / TAMANHO_BLOCO);
             if (novoTileX !== playerTileX || novoTileY !== playerTileY) {
-                const bomba = bombas.find(b => b.gridX === playerTileX && b.gridY === playerTileY && b.colocadorId === this.id);
+                const bomba = bombas.find(b => b.gridX === playerTileX && b.gridY === playerTileY && b.playerRef.id === this.id);
                 if (bomba) {
+                    // Esta lógica agora funciona corretamente para definir podePassar como false,
+                    // já que o jogador realmente se moveu para um novo bloco.
                     bomba.podePassar = false;
                 }
             }

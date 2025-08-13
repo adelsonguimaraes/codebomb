@@ -1,9 +1,8 @@
 // map.js - Lógica do mapa e blocos
-import { players } from './main.js';
-
-export const LARGURA_MAPA = 20;
-export const ALTURA_MAPA = 20;
-export const TAMANHO_BLOCO = 40;
+// A importação de 'players' foi removida, pois não é mais exportada por main.js
+export const LARGURA_MAPA = 17;
+export const ALTURA_MAPA = 13;
+export const TAMANHO_BLOCO = 50;
 
 // O mapa agora armazena instâncias da classe Block
 export const mapa = [];
