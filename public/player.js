@@ -1,8 +1,7 @@
 // player.js - Classe do jogador e input
 import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, Block } from './map.js';
-import { bombas, Bomb } from './bomb.js'; // Importa a classe Bomb
+import { bombas, Bomb } from './bomb.js';
 
-export const VELOCIDADE_JOGADOR = 2; // Velocidade de movimento em pixels
 export const teclasPressionadas = {};
 
 window.addEventListener('keydown', (e) => {
@@ -18,9 +17,10 @@ export class Player {
         this.x = x + TAMANHO_BLOCO / 2;
         this.y = y + TAMANHO_BLOCO / 2;
         this.tamanho = TAMANHO_BLOCO * 0.8;
-        this.maxBombas = 1; // Variável que controla o máximo de bombas que o jogador pode ter
-        this.bombasAtivas = 0; // Variável que conta as bombas ativas
-        this.explosionRadius = 1; // Raio de explosão padrão
+        this.velocidade = 2; // Agora é uma propriedade da instância
+        this.maxBombas = 1;
+        this.bombasAtivas = 0;
+        this.explosionRadius = 1;
     }
 
     podeMover(x, y) {
@@ -39,8 +39,6 @@ export class Player {
             return false;
         }
 
-        // CORREÇÃO: A colisão com bombas agora só é verificada se o jogador estiver se movendo para um NOVO bloco.
-        // Isso permite que o jogador saia do bloco onde a bomba foi colocada.
         if (mapaX !== playerGridX || mapaY !== playerGridY) {
             const temBomba = bombas.find(b => b.gridX === mapaX && b.gridY === mapaY);
             if (temBomba) {
@@ -59,16 +57,16 @@ export class Player {
         let novoY = this.y;
 
         if (teclasPressionadas['arrowup'] || teclasPressionadas['w']) {
-            novoY -= VELOCIDADE_JOGADOR;
+            novoY -= this.velocidade;
         }
         if (teclasPressionadas['arrowdown'] || teclasPressionadas['s']) {
-            novoY += VELOCIDADE_JOGADOR;
+            novoY += this.velocidade;
         }
         if (teclasPressionadas['arrowleft'] || teclasPressionadas['a']) {
-            novoX -= VELOCIDADE_JOGADOR;
+            novoX -= this.velocidade;
         }
         if (teclasPressionadas['arrowright'] || teclasPressionadas['d']) {
-            novoX += VELOCIDADE_JOGADOR;
+            novoX += this.velocidade;
         }
 
         if (this.podeMover(novoX, novoY)) {
@@ -80,8 +78,6 @@ export class Player {
             if (novoTileX !== playerTileX || novoTileY !== playerTileY) {
                 const bomba = bombas.find(b => b.gridX === playerTileX && b.gridY === playerTileY && b.playerRef.id === this.id);
                 if (bomba) {
-                    // Esta lógica agora funciona corretamente para definir podePassar como false,
-                    // já que o jogador realmente se moveu para um novo bloco.
                     bomba.podePassar = false;
                 }
             }
@@ -90,5 +86,10 @@ export class Player {
 
     aumentarRaioExplosao() {
         this.explosionRadius++;
+    }
+
+    // CORREÇÃO: Novo método para aumentar a velocidade
+    aumentarVelocidade() {
+        this.velocidade++;
     }
 }

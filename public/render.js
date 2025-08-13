@@ -1,10 +1,10 @@
 // render.js - Lógica de renderização
-import { Block, TAMANHO_BLOCO, LARGURA_MAPA, ALTURA_MAPA, fechamentoNivel } from './map.js';
+import { TAMANHO_BLOCO, LARGURA_MAPA, ALTURA_MAPA, fechamentoNivel } from './map.js';
+import { Block } from './powerup.js'; // A classe Block agora é importada de powerup.js
 
 export function desenharTudo(ctx, mapa, players, bombas, explosoes, powerups, arenaFechando, areaPiscaTimer) {
     desenharFundo(ctx, LARGURA_MAPA, ALTURA_MAPA);
     desenharMapa(ctx, mapa);
-    // Nova função para desenhar a área de fechamento piscando
     desenharAreasDeFechamento(ctx, arenaFechando, areaPiscaTimer);
     desenharBombas(ctx, bombas);
     desenharExplosoes(ctx, explosoes);
@@ -13,8 +13,8 @@ export function desenharTudo(ctx, mapa, players, bombas, explosoes, powerups, ar
 }
 
 function desenharFundo(ctx, larguraMapa, alturaMapa) {
-    // Cor do fundo restaurada para a original
-    ctx.fillStyle = '#7f8c8d';
+    // Cor de fundo alterada para não confundir com os blocos de espaço vazio
+    ctx.fillStyle = '#34495e';
     ctx.fillRect(0, 0, larguraMapa * TAMANHO_BLOCO, alturaMapa * TAMANHO_BLOCO);
 }
 
@@ -23,43 +23,47 @@ function desenharMapa(ctx, mapa) {
         for (let x = 0; x < mapa[y].length; x++) {
             const bloco = mapa[y][x];
             let conteudo = '';
+            let fillStyle = '#7f8c8d'; // Cor padrão para espaço vazio
 
-            if (bloco instanceof Block) {
-                switch (bloco.type) {
-                    case 1: // Parede indestrutível do mapa fixo
-                        conteudo = 'X';
-                        ctx.fillStyle = '#1abc9c';
-                        break;
-                    case 2: // Parede de fechamento da arena (agora com cor fixa)
-                        conteudo = '=';
-                        ctx.fillStyle = '#c0392b';
-                        break;
-                    case 3: // Bloco destrutível
-                        conteudo = '*';
-                        ctx.fillStyle = '#f1c40f';
-                        break;
-                    default:
-                        // Espaço vazio
-                        conteudo = '-';
-                        ctx.fillStyle = '#7f8c8d';
-                        break;
-                }
-            } else {
-                // Caso não seja um objeto Block, assume-se que é um espaço vazio
-                conteudo = '-';
-                ctx.fillStyle = '#7f8c8d';
+            // CORREÇÃO: Verifica se o bloco é um objeto para extrair a propriedade 'type'
+            const blockType = typeof bloco === 'object' ? bloco.type : bloco;
+
+            switch (blockType) {
+                case 1: // Parede indestrutível do mapa fixo
+                    conteudo = 'X';
+                    fillStyle = '#1abc9c';
+                    break;
+                case 2: // Parede de fechamento da arena
+                    conteudo = '=';
+                    fillStyle = '#c0392b';
+                    break;
+                case 3: // Bloco destrutível
+                    conteudo = '*';
+                    fillStyle = '#f1c40f';
+                    break;
+                default: // Espaço vazio
+                    conteudo = '-';
+                    fillStyle = '#7f8c8d';
+                    break;
             }
 
-            ctx.fillRect(bloco.x, bloco.y, TAMANHO_BLOCO, TAMANHO_BLOCO);
+            const xPos = x * TAMANHO_BLOCO;
+            const yPos = y * TAMANHO_BLOCO;
+
+            ctx.fillStyle = fillStyle;
+            // CORREÇÃO: Usando xPos e yPos para o desenho
+            ctx.fillRect(xPos, yPos, TAMANHO_BLOCO, TAMANHO_BLOCO);
             ctx.strokeStyle = '#2c3e50';
             ctx.lineWidth = 1;
-            ctx.strokeRect(bloco.x, bloco.y, TAMANHO_BLOCO, TAMANHO_BLOCO);
+            // CORREÇÃO: Usando xPos e yPos para o desenho
+            ctx.strokeRect(xPos, yPos, TAMANHO_BLOCO, TAMANHO_BLOCO);
 
             ctx.fillStyle = '#ecf0f1';
             ctx.font = `${TAMANHO_BLOCO * 0.5}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(conteudo, bloco.x + TAMANHO_BLOCO / 2, bloco.y + TAMANHO_BLOCO / 2);
+            // CORREÇÃO: Usando xPos e yPos para o desenho
+            ctx.fillText(conteudo, xPos + TAMANHO_BLOCO / 2, yPos + TAMANHO_BLOCO / 2);
         }
     }
 }
@@ -85,7 +89,6 @@ function desenharAreasDeFechamento(ctx, arenaFechando, areaPiscaTimer) {
         ctx.fillRect(larguraArena - TAMANHO_BLOCO - offset, offset + TAMANHO_BLOCO, TAMANHO_BLOCO, alturaArena - 2 * offset - 2 * TAMANHO_BLOCO);
     }
 }
-
 
 function desenharPlayers(ctx, players) {
     players.forEach(player => {
@@ -122,6 +125,10 @@ function desenharPowerups(ctx, powerups) {
             ctx.beginPath();
             ctx.arc(p.x, p.y, TAMANHO_BLOCO * 0.3, 0, Math.PI * 2);
             ctx.fill();
+        } else if (p.type === 'speed') {
+            // Desenha o novo power-up de velocidade
+            ctx.fillStyle = '#6F4E37'; // Cor marrom (café) para o power-up de velocidade
+            ctx.fillRect(p.x - TAMANHO_BLOCO * 0.2, p.y - TAMANHO_BLOCO * 0.2, TAMANHO_BLOCO * 0.4, TAMANHO_BLOCO * 0.4);
         }
     });
 }

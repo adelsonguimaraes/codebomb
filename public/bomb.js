@@ -1,6 +1,6 @@
 // bomb.js - Lógica de bombas e explosões
 import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, Block, powerups } from './map.js';
-import { ExplosionRadiusPowerup } from './powerup.js';
+import { ExplosionRadiusPowerup, SpeedPowerup } from './powerup.js';
 
 export const TEMPO_BOMBA = 120; // Tempo em frames antes da explosão
 export const bombas = [];
@@ -107,9 +107,11 @@ export class Bomb {
                 if (bloco instanceof Block && bloco.type === 3) {
                     bloco.type = 0; // Torna o bloco vazio
 
-                    // Lógica para criar power-up se houver um escondido no bloco
+                    // CORREÇÃO: Lógica para criar o power-up correto
                     if (bloco.powerupType === 'explosionRadius') {
                         powerups.push(new ExplosionRadiusPowerup(pos.x, pos.y));
+                    } else if (bloco.powerupType === 'speed') {
+                        powerups.push(new SpeedPowerup(pos.x, pos.y));
                     }
                 }
                 // Cria uma nova instância da classe Explosion

@@ -5,8 +5,8 @@ import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } 
 import { desenharTudo } from './render.js';
 
 // Constantes e variáveis de estado do jogo
-const ZOOM_NIVEL = 1.0;
-const CAMERA_SEGUIR_JOGADOR = false;
+const ZOOM_NIVEL = 1.5;
+const CAMERA_SEGUIR_JOGADOR = true;
 const TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS = 10;
 const TEMPO_PISCAR_SEGUNDOS = 5;
 const TAMANHO_MINIMO_ARENA = 7;
@@ -53,6 +53,8 @@ export class GameManager {
             player.mover();
             // Lógica para coletar power-ups
             for (let i = powerups.length - 1; i >= 0; i--) {
+                console.log(powerups[i]);
+
                 const powerup = powerups[i];
                 if (
                     player.x > powerup.x - TAMANHO_BLOCO / 2 &&

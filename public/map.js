@@ -11,7 +11,8 @@ export const powerups = [];
 
 // Configuração para a distribuição de power-ups
 export const POWERUP_CONFIG = {
-    explosionRadius: 5 // Quantidade de power-ups de raio de explosão
+    explosionRadius: 5, // Quantidade de power-ups de raio de explosão
+    speed: 3 // NOVO: Quantidade de power-ups de velocidade
 };
 
 // Classe para representar um bloco no mapa
@@ -51,11 +52,12 @@ export function encontrarPosicaoInicialSegura() {
     return { x: 1, y: 1 };
 }
 
+// NOVO: Função refatorada para gerar blocos destrutíveis e power-ups de forma mais robusta
 export function gerarBlocosDestrutiveis(posicoesIniciais) {
-    let powerupCount = { ...POWERUP_CONFIG };
-    const posicoesParaPowerup = [];
+    const CHANCE_DESTRUTIVEL = 0.7;
+    const posicoesElegiveis = [];
 
-    // Primeira passagem: identificar posições válidas para power-ups
+    // Primeira passagem: Identifica todas as posições elegíveis para blocos destrutíveis/power-ups
     for (let y = 1; y < ALTURA_MAPA - 1; y++) {
         for (let x = 1; x < LARGURA_MAPA - 1; x++) {
             const isPosicaoInicial = posicoesIniciais.some(p => p.x === x && p.y === y);
@@ -66,42 +68,43 @@ export function gerarBlocosDestrutiveis(posicoesIniciais) {
                 (p.x === x && p.y === y - 1)
             );
             if (mapa[y][x].type === 0 && !isPosicaoInicial && !isPosicaoAoLado) {
-                posicoesParaPowerup.push({ x, y });
+                posicoesElegiveis.push({ x, y });
             }
         }
     }
 
-    // Segunda passagem: distribuir power-ups aleatoriamente nas posições válidas
+    // Segunda passagem: Distribui os power-ups nas posições elegíveis
+    let powerupCount = { ...POWERUP_CONFIG };
     for (let type in powerupCount) {
         for (let i = 0; i < powerupCount[type]; i++) {
-            if (posicoesParaPowerup.length > 0) {
-                const randomIndex = Math.floor(Math.random() * posicoesParaPowerup.length);
-                const { x, y } = posicoesParaPowerup.splice(randomIndex, 1)[0];
+            if (posicoesElegiveis.length > 0) {
+                const randomIndex = Math.floor(Math.random() * posicoesElegiveis.length);
+                const { x, y } = posicoesElegiveis.splice(randomIndex, 1)[0];
                 mapa[y][x].powerupType = type;
+
+                console.log(`Power-up ${type} gerado na posição (${x}, ${y})`);
+
             }
         }
     }
 
-    // Terceira passagem: preencher os demais espaços com blocos destrutíveis
+    // Terceira passagem: Preenche o resto das posições elegíveis com blocos destrutíveis
+    posicoesElegiveis.forEach(({ x, y }) => {
+        if (Math.random() < CHANCE_DESTRUTIVEL) {
+            mapa[y][x].type = 3; // Bloco destrutível
+        }
+    });
+
+    // Quarta passagem: Garante que os blocos com power-up também sejam destrutíveis
     for (let y = 1; y < ALTURA_MAPA - 1; y++) {
         for (let x = 1; x < LARGURA_MAPA - 1; x++) {
-            if (mapa[y][x].type === 0 && mapa[y][x].powerupType === null) {
-                const isPosicaoInicial = posicoesIniciais.some(p => p.x === x && p.y === y);
-                const isPosicaoAoLado = posicoesIniciais.some(p =>
-                    (p.x === x + 1 && p.y === y) ||
-                    (p.x === x - 1 && p.y === y) ||
-                    (p.x === x && p.y === y + 1) ||
-                    (p.x === x && p.y === y - 1)
-                );
-                if (!isPosicaoInicial && !isPosicaoAoLado && Math.random() < 0.7) {
-                    mapa[y][x].type = 3; // Bloco destrutível
-                }
-            } else if (mapa[y][x].powerupType !== null) {
-                mapa[y][x].type = 3; // Bloco destrutível com power-up
+            if (mapa[y][x].powerupType !== null) {
+                mapa[y][x].type = 3;
             }
         }
     }
 }
+
 
 // Fechamento de Arena
 export let fechamentoNivel = 0;
