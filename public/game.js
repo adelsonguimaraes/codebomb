@@ -22,6 +22,10 @@ export class GameManager {
         this.areaPiscaTimer = -1;
         this.tempoRestante = TEMPO_TOTAL_SEGUNDOS * 60; // NOVO: Tempo restante do jogo em frames
         this.hudElement = document.getElementById('timer-display'); // NOVO: Elemento do HUD
+        // NOVO: Elemento e limite para o log de eventos
+        this.eventLogElement = document.getElementById('event-log');
+        this.maxLogMessages = 5;
+        this.fechamentoAvisoFeito = false; // NOVO: Flag para avisar do fechamento apenas uma vez
     }
 
     iniciarJogo() {
@@ -35,6 +39,31 @@ export class GameManager {
 
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+
+        // NOVO: Loga o evento de início do jogo
+        this.logEvent('Jogo iniciado! Prepare-se para a batalha!');
+    }
+
+    // NOVO: Método para logar eventos na caixa de mensagens
+    logEvent(message) {
+        if (this.eventLogElement) {
+            // Torna todas as mensagens existentes em "antigas"
+            Array.from(this.eventLogElement.children).forEach(p => {
+                p.classList.add('old-message');
+            });
+
+            // Cria um novo parágrafo para a mensagem
+            const messageElement = document.createElement('p');
+            messageElement.textContent = message;
+
+            // Adiciona a mensagem ao início da lista (mas com flex-direction-reverse, ela aparecerá no final visualmente)
+            this.eventLogElement.prepend(messageElement);
+
+            // Mantém o número máximo de mensagens
+            while (this.eventLogElement.children.length > this.maxLogMessages) {
+                this.eventLogElement.removeChild(this.eventLogElement.lastChild);
+            }
+        }
     }
 
     atualizarEstado() {
@@ -60,6 +89,9 @@ export class GameManager {
                     player.y > powerup.y - TAMANHO_BLOCO / 2 &&
                     player.y < powerup.y + TAMANHO_BLOCO / 2
                 ) {
+                    // NOVO: Loga o evento de power-up coletado
+                    this.logEvent(`Jogador ${player.id} pegou o power-up: ${powerup.type}!`);
+                    
                     // Adicionando a chamada do método correto para o novo power-up
                     powerup.applyEffect(player);
                     powerups.splice(i, 1);
@@ -75,6 +107,12 @@ export class GameManager {
         }
 
         if (this.fechamentoAtivo) {
+            // NOVO: Loga o aviso de fechamento da arena apenas uma vez
+            if (!this.fechamentoAvisoFeito) {
+                this.logEvent('Aviso: A arena está começando a fechar!');
+                this.fechamentoAvisoFeito = true;
+            }
+
             if (this.fechamentoTimer > 0) {
                 this.fechamentoTimer--;
             } else {
@@ -97,7 +135,7 @@ export class GameManager {
             }
         }
     }
-
+    
     // NOVO: Método para atualizar o HUD
     atualizarHUD() {
         const segundos = Math.floor(this.tempoRestante / 60);

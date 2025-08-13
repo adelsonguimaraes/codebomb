@@ -1,6 +1,6 @@
 // map.js - Lógica do mapa e blocos
-export const LARGURA_MAPA = 17;
-export const ALTURA_MAPA = 13;
+export const LARGURA_MAPA = 20;
+export const ALTURA_MAPA = 20;
 export const TAMANHO_BLOCO = 50;
 
 // O mapa agora armazena instâncias da classe Block

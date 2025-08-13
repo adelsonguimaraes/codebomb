@@ -33,11 +33,49 @@
             border-radius: 5px;
             z-index: 10;
         }
+
+        /* Estilo para a caixa de log de eventos */
+        #event-log {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 200px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-family: Arial, sans-serif;
+            padding: 10px;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        #event-log p {
+            margin: 0;
+            white-space: nowrap;
+            transition: color 0.5s ease-in-out, font-size 0.5s ease-in-out;
+            font-size: 15px;
+            /* Tamanho da fonte para a mensagem mais recente */
+            color: white;
+        }
+
+        /* Classe para mensagens antigas */
+        #event-log p.old-message {
+            color: #c5c2c2;
+            /* Cor cinza para mensagens antigas */
+            font-size: 13px;
+            /* Tamanho da fonte menor para mensagens antigas */
+        }
     </style>
 </head>
 
 <body>
     <div id="timer-display">2:00</div>
+    <!-- Elemento HTML para a caixa de log de eventos -->
+    <div id="event-log"></div>
     <canvas id="gameCanvas"></canvas>
     <script type="module" src="./main.js"></script>
 </body>
