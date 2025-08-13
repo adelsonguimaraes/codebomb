@@ -1,5 +1,5 @@
 // game.js - Classe de gerenciamento do jogo
-import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, encontrarPosicaoInicialSegura, gerarBlocosDestrutiveis, fecharArena, fechamentoNivel } from './map.js';
+import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, encontrarPosicaoInicialSegura, gerarBlocosDestrutiveis, fecharArena, fechamentoNivel, powerups } from './map.js';
 import { Player, teclasPressionadas } from './player.js';
 import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } from './bomb.js';
 import { desenharTudo } from './render.js';
@@ -49,7 +49,22 @@ export class GameManager {
     }
 
     atualizarEstado() {
-        this.players.forEach(player => player.mover());
+        this.players.forEach(player => {
+            player.mover();
+            // Lógica para coletar power-ups
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const powerup = powerups[i];
+                if (
+                    player.x > powerup.x - TAMANHO_BLOCO / 2 &&
+                    player.x < powerup.x + TAMANHO_BLOCO / 2 &&
+                    player.y > powerup.y - TAMANHO_BLOCO / 2 &&
+                    player.y < powerup.y + TAMANHO_BLOCO / 2
+                ) {
+                    powerup.applyEffect(player);
+                    powerups.splice(i, 1);
+                }
+            }
+        });
         atualizarBombas();
         atualizarExplosoes();
 
@@ -103,7 +118,7 @@ export class GameManager {
         this.ctx.save();
         this.configurarCamera();
         const arenaFechando = this.areaPiscaTimer > 0;
-        desenharTudo(this.ctx, mapa, this.players, bombas, explosoes, arenaFechando, this.areaPiscaTimer);
+        desenharTudo(this.ctx, mapa, this.players, bombas, explosoes, powerups, arenaFechando, this.areaPiscaTimer);
         this.ctx.restore();
         requestAnimationFrame(() => this.gameLoop());
     }

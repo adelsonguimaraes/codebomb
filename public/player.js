@@ -20,6 +20,7 @@ export class Player {
         this.tamanho = TAMANHO_BLOCO * 0.8;
         this.maxBombas = 1; // Variável que controla o máximo de bombas que o jogador pode ter
         this.bombasAtivas = 0; // Variável que conta as bombas ativas
+        this.explosionRadius = 1; // Raio de explosão padrão
     }
 
     podeMover(x, y) {
@@ -85,5 +86,9 @@ export class Player {
                 }
             }
         }
+    }
+
+    aumentarRaioExplosao() {
+        this.explosionRadius++;
     }
 }
