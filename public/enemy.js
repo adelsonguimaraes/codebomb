@@ -6,19 +6,26 @@ import { Player } from './player.js';
 const DIRECTIONS = ['up', 'down', 'left', 'right'];
 
 export class Enemy {
+    // VARIÁVEL CONFIGURÁVEL: Vida inicial do inimigo
+    static initialLife = 2;
+
     constructor(gridX, gridY, player) {
         this.gridX = gridX;
         this.gridY = gridY;
-        // Posição inicial centralizada no bloco
         this.x = gridX * TAMANHO_BLOCO + TAMANHO_BLOCO / 2;
         this.y = gridY * TAMANHO_BLOCO + TAMANHO_BLOCO / 2;
-        this.tamanho = TAMANHO_BLOCO * 0.7; // Um pouco menor que o jogador
-        this.velocidade = 1; // Velocidade um pouco menor que o jogador
-        this.direction = null; // Começa sem direção definida
+        this.tamanho = TAMANHO_BLOCO * 0.7;
+        this.velocidade = 1;
+        this.direction = null;
         this.targetX = this.x;
         this.targetY = this.y;
         this.player = player;
         this.isIrritated = false;
+        // NOVO: Variáveis para a nova lógica de vida e atordoamento
+        this.life = Enemy.initialLife;
+        this.isStunned = false;
+        this.stunTimer = 0;
+        this.isDamaged = false; // NOVO: Flag para o estado de dano
     }
 
     // Método para verificar se o inimigo pode se mover para uma direção específica
@@ -61,8 +68,32 @@ export class Enemy {
         return true;
     }
 
+    // NOVO: Método para o inimigo sofrer dano
+    takeDamage() {
+        if (!this.isStunned) {
+            this.life--;
+            this.isDamaged = true;
+            this.isStunned = true;
+            this.stunTimer = 120; // 2 segundos * 60 FPS
+
+            // Retorna true se o inimigo foi derrotado
+            return this.life <= 0;
+        }
+        return false;
+    }
+
     // Lógica principal de movimento e IA
     mover() {
+        // NOVO: Se o inimigo estiver atordoado, ele não se move
+        if (this.isStunned) {
+            this.stunTimer--;
+            if (this.stunTimer <= 0) {
+                this.isStunned = false;
+                this.isDamaged = false;
+            }
+            return;
+        }
+
         // Calcula a distância do inimigo ao jogador em blocos
         const distGridX = Math.abs(Math.floor(this.player.x / TAMANHO_BLOCO) - this.gridX);
         const distGridY = Math.abs(Math.floor(this.player.y / TAMANHO_BLOCO) - this.gridY);
@@ -150,9 +181,14 @@ export class Enemy {
         }
     }
 
-    // NOVO: Método para desenhar o inimigo e o seu rosto
+    // Método para desenhar o inimigo e o seu rosto
     desenhar(ctx) {
-        // Desenha o corpo do inimigo (círculo vermelho)
+        // NOVO: Apenas desenha se o inimigo não estiver atordoado e piscando
+        if (this.isStunned && (Math.floor(this.stunTimer / 10) % 2 === 0)) {
+            return; // Não desenha para simular o piscar
+        }
+
+        // Desenha o corpo do inimigo (círculo)
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.tamanho / 2, 0, Math.PI * 2, false);
         ctx.fillStyle = this.isIrritated ? '#c0392b' : '#e74c3c'; // Cor muda para indicar irritação
@@ -164,8 +200,15 @@ export class Enemy {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // O rosto muda de acordo com o estado de irritação
-        const face = this.isIrritated ? 'u\_/u' : '-u-';
+        // O rosto muda de acordo com o estado de irritação ou dano
+        let face;
+        if (this.isDamaged) {
+            face = '@c@'; // Rosto de dano
+        } else if (this.isIrritated) {
+            face = 'Ù_Ú'; // Rosto de irritação
+        } else {
+            face = '-u-'; // Rosto padrão
+        }
         ctx.fillText(face, this.x, this.y);
     }
 }

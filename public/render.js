@@ -11,7 +11,8 @@ export function desenharTudo(ctx, mapa, players, bombas, explosoes, powerups, en
     desenharExplosoes(ctx, explosoes);
     desenharPowerups(ctx, powerups);
     desenharPlayers(ctx, players);
-    desenharEnemies(ctx, enemies); // NOVO: Chama a função para desenhar os inimigos
+    // CORREÇÃO: Chama o método desenhar() de cada inimigo, em vez de uma função externa
+    enemies.forEach(enemy => enemy.desenhar(ctx));
 }
 
 function desenharFundo(ctx, larguraMapa, alturaMapa) {
@@ -153,26 +154,5 @@ function desenharPowerups(ctx, powerups) {
                 ctx.fillText('B', p.x, p.y);
             }
         }
-    });
-}
-
-// NOVO: Função para desenhar os inimigos com o rosto
-function desenharEnemies(ctx, enemies) {
-    enemies.forEach(enemy => {
-        // Desenha o corpo do inimigo (círculo vermelho)
-        ctx.beginPath();
-        ctx.arc(enemy.x, enemy.y, enemy.tamanho / 2, 0, Math.PI * 2, false);
-        ctx.fillStyle = enemy.isIrritated ? '#c0392b' : '#e74c3c'; // Cor muda para indicar irritação
-        ctx.fill();
-
-        // Desenha o rosto do inimigo
-        ctx.fillStyle = '#ecf0f1';
-        ctx.font = `${enemy.tamanho * 0.38}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        // O rosto muda de acordo com o estado de irritação
-        const face = enemy.isIrritated ? 'Ù_Ú' : '-u-';
-        ctx.fillText(face, enemy.x, enemy.y);
     });
 }

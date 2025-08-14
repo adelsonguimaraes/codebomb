@@ -3,7 +3,7 @@ import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, encontrarPosicaoInicial
 import { Player, teclasPressionadas } from './player.js';
 import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } from './bomb.js';
 import { desenharTudo } from './render.js';
-import { Enemy } from './enemy.js'; // NOVO: Importa a classe Enemy
+import { Enemy } from './enemy.js';
 
 // Constantes e variáveis de estado do jogo
 const ZOOM_NIVEL = 1.5;
@@ -11,9 +11,9 @@ const CAMERA_SEGUIR_JOGADOR = true;
 const TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS = 10;
 const TEMPO_PISCAR_SEGUNDOS = 5;
 const TAMANHO_MINIMO_ARENA = 7;
-const TEMPO_TOTAL_SEGUNDOS = 120; // NOVO: 2 minutos de jogo por padrão
+const TEMPO_TOTAL_SEGUNDOS = 120;
 
-// NOVO: Configuração dos inimigos
+// Configuração dos inimigos
 const ENABLE_ENEMIES = true;
 const NUMBER_OF_ENEMIES = 3;
 
@@ -22,20 +22,18 @@ export class GameManager {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.players = [];
-        this.enemies = []; // NOVO: Array para armazenar os inimigos
-        this.fechamentoAtivo = false; // Alterado para começar como false
-        this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60; // em frames
+        this.enemies = [];
+        this.fechamentoAtivo = false;
+        this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60;
         this.areaPiscaTimer = -1;
-        this.tempoRestante = TEMPO_TOTAL_SEGUNDOS * 60; // NOVO: Tempo restante do jogo em frames
-        this.hudElement = document.getElementById('timer-display'); // NOVO: Elemento do HUD
-        // NOVO: Elemento e limite para o log de eventos
+        this.tempoRestante = TEMPO_TOTAL_SEGUNDOS * 60;
+        this.hudElement = document.getElementById('timer-display');
         this.eventLogElement = document.getElementById('event-log');
         this.maxLogMessages = 5;
-        this.fechamentoAvisoFeito = false; // NOVO: Flag para avisar do fechamento apenas uma vez
+        this.fechamentoAvisoFeito = false;
     }
 
     iniciarJogo() {
-        // CORREÇÃO: Reseta o estado do jogo e o mapa para evitar artefatos visuais
         inicializarMapa();
         this.fechamentoAtivo = false;
         this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60;
@@ -46,30 +44,24 @@ export class GameManager {
         const posicaoInicial = encontrarPosicaoInicialSegura();
         const posicoesJogadores = [{ x: posicaoInicial.x, y: posicaoInicial.y }];
 
-        // A classe Player agora espera as coordenadas do grid, o offset é calculado internamente
         const player1 = new Player(1, posicaoInicial.x * TAMANHO_BLOCO, posicaoInicial.y * TAMANHO_BLOCO);
         this.players.push(player1);
 
-        // CORREÇÃO: Primeiro, encontramos as posições seguras para os inimigos...
         let posicoesEntidades = [...posicoesJogadores];
         if (ENABLE_ENEMIES) {
             const posicoesInimigos = encontrarPosicoesInimigos(NUMBER_OF_ENEMIES, posicoesJogadores);
             posicoesInimigos.forEach(enemyPos => {
-                // MODIFICADO: Passa as coordenadas de grid e a instância do jogador para o construtor do inimigo
                 const enemy = new Enemy(enemyPos.x, enemyPos.y, player1);
                 this.enemies.push(enemy);
                 posicoesEntidades.push(enemyPos);
             });
         }
 
-        // ...E só agora geramos os blocos destrutíveis, evitando as posições dos jogadores e inimigos
         gerarBlocosDestrutiveis(posicoesEntidades);
-
 
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
 
-        // NOVO: Loga o evento de início do jogo
         this.logEvent('Jogo iniciado! Prepare-se para a batalha!');
     }
 
@@ -120,21 +112,17 @@ export class GameManager {
 
 
     atualizarEstado() {
-        // NOVO: Decrementa o tempo restante do jogo
         if (this.tempoRestante > 0) {
             this.tempoRestante--;
         } else {
-            // Quando o tempo termina, inicia o fechamento da arena
             if (!this.fechamentoAtivo) {
                 this.fechamentoAtivo = true;
             }
         }
 
-        // NOVO: Lógica para o timer de imunidade do power-up
         powerups.forEach(powerup => {
             if (powerup.immunityTimer > 0) {
                 powerup.immunityTimer--;
-                // Lógica de piscar: torna o power-up visível/invisível a cada 5 quadros
                 powerup.visible = (Math.floor(powerup.immunityTimer / 5) % 2) === 0;
             } else {
                 powerup.visible = true;
@@ -143,9 +131,7 @@ export class GameManager {
 
         this.players.forEach(player => {
             player.mover();
-            // Lógica para coletar power-ups
             for (let i = powerups.length - 1; i >= 0; i--) {
-
                 const powerup = powerups[i];
                 if (
                     player.x > powerup.x - TAMANHO_BLOCO / 2 &&
@@ -153,32 +139,44 @@ export class GameManager {
                     player.y > powerup.y - TAMANHO_BLOCO / 2 &&
                     player.y < powerup.y + TAMANHO_BLOCO / 2
                 ) {
-                    // NOVO: Loga o evento de power-up coletado
                     this.logEvent(`Jogador ${player.id} pegou o power-up: ${powerup.type}!`);
-
-                    // Adicionando a chamada do método correto para o novo power-up
                     powerup.applyEffect(player);
                     powerups.splice(i, 1);
                 }
             }
         });
 
-        // NOVO: Atualiza a posição dos inimigos
-        this.enemies.forEach(enemy => {
+        // NOVO: Verifica colisão entre inimigos e explosões
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+
+            // Move o inimigo
             enemy.mover();
-        });
+
+            // Verifica se o inimigo colidiu com alguma explosão
+            const atingido = explosoes.some(exp => {
+                return (Math.floor(exp.x / TAMANHO_BLOCO) === enemy.gridX && Math.floor(exp.y / TAMANHO_BLOCO) === enemy.gridY);
+            });
+
+            // Se o inimigo foi atingido, ele toma dano
+            if (atingido) {
+                const isDefeated = enemy.takeDamage();
+                if (isDefeated) {
+                    this.logEvent(`Inimigo derrotado!`);
+                    this.enemies.splice(i, 1);
+                }
+            }
+        }
 
         atualizarBombas();
         atualizarExplosoes();
-        this.verificarDestruicaoPowerups(); // NOVO: Chama a nova função para verificar a destruição dos powerups
+        this.verificarDestruicaoPowerups();
 
-        // NOVO: Verifica se a tecla de espaço está pressionada para plantar uma bomba
         if (teclasPressionadas[' '] && this.players[0].bombasAtivas < this.players[0].maxBombas) {
-            plantarBomba(this.players[0], this.logEvent.bind(this)); // NOVO: Passa a função de log como callback
+            plantarBomba(this.players[0], this.logEvent.bind(this));
         }
 
         if (this.fechamentoAtivo) {
-            // NOVO: Loga o aviso de fechamento da arena apenas uma vez
             if (!this.fechamentoAvisoFeito) {
                 this.logEvent('Aviso: A arena está começando a fechar!');
                 this.fechamentoAvisoFeito = true;
@@ -207,7 +205,6 @@ export class GameManager {
         }
     }
 
-    // NOVO: Método para atualizar o HUD
     atualizarHUD() {
         const segundos = Math.floor(this.tempoRestante / 60);
         const minutos = Math.floor(segundos / 60);
@@ -246,7 +243,7 @@ export class GameManager {
         const arenaFechando = this.areaPiscaTimer > 0;
         desenharTudo(this.ctx, mapa, this.players, bombas, explosoes, powerups, this.enemies, arenaFechando, this.areaPiscaTimer);
         this.ctx.restore();
-        this.atualizarHUD(); // NOVO: Chama a atualização do HUD
+        this.atualizarHUD();
         requestAnimationFrame(() => this.gameLoop());
     }
 }
