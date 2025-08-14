@@ -1,8 +1,9 @@
 // game.js - Classe de gerenciamento do jogo
-import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, encontrarPosicaoInicialSegura, gerarBlocosDestrutiveis, fecharArena, fechamentoNivel, powerups } from './map.js';
+import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, encontrarPosicaoInicialSegura, gerarBlocosDestrutiveis, fecharArena, fechamentoNivel, powerups, inicializarMapa, encontrarPosicoesInimigos } from './map.js';
 import { Player, teclasPressionadas } from './player.js';
 import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } from './bomb.js';
 import { desenharTudo } from './render.js';
+import { Enemy } from './enemy.js'; // NOVO: Importa a classe Enemy
 
 // Constantes e variáveis de estado do jogo
 const ZOOM_NIVEL = 1.5;
@@ -12,11 +13,16 @@ const TEMPO_PISCAR_SEGUNDOS = 5;
 const TAMANHO_MINIMO_ARENA = 7;
 const TEMPO_TOTAL_SEGUNDOS = 120; // NOVO: 2 minutos de jogo por padrão
 
+// NOVO: Configuração dos inimigos
+const ENABLE_ENEMIES = true;
+const NUMBER_OF_ENEMIES = 3;
+
 export class GameManager {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
         this.players = [];
+        this.enemies = []; // NOVO: Array para armazenar os inimigos
         this.fechamentoAtivo = false; // Alterado para começar como false
         this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60; // em frames
         this.areaPiscaTimer = -1;
@@ -29,13 +35,38 @@ export class GameManager {
     }
 
     iniciarJogo() {
+        // CORREÇÃO: Reseta o estado do jogo e o mapa para evitar artefatos visuais
+        inicializarMapa();
+        this.fechamentoAtivo = false;
+        this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60;
+        this.areaPiscaTimer = -1;
+        this.tempoRestante = TEMPO_TOTAL_SEGUNDOS * 60;
+        this.fechamentoAvisoFeito = false;
+
         const posicaoInicial = encontrarPosicaoInicialSegura();
         const posicoesJogadores = [{ x: posicaoInicial.x, y: posicaoInicial.y }];
-        gerarBlocosDestrutiveis(posicoesJogadores);
+
+        // CORREÇÃO: Primeiro, encontramos as posições seguras para os inimigos...
+        let posicoesEntidades = [...posicoesJogadores];
+        if (ENABLE_ENEMIES) {
+            const posicoesInimigos = encontrarPosicoesInimigos(NUMBER_OF_ENEMIES, posicoesJogadores);
+            posicoesInimigos.forEach(enemyPos => {
+                // ...e depois centralizamos e criamos o inimigo.
+                const xCentralizado = enemyPos.x;
+                const yCentralizado = enemyPos.y;
+                const enemy = new Enemy(xCentralizado, yCentralizado);
+                this.enemies.push(enemy);
+                posicoesEntidades.push(enemyPos);
+            });
+        }
+
+        // ...E só agora geramos os blocos destrutíveis, evitando as posições dos jogadores e inimigos
+        gerarBlocosDestrutiveis(posicoesEntidades);
 
         // A classe Player agora espera as coordenadas do grid, o offset é calculado internamente
         const player1 = new Player(1, posicaoInicial.x * TAMANHO_BLOCO, posicaoInicial.y * TAMANHO_BLOCO);
         this.players.push(player1);
+
 
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
@@ -133,6 +164,12 @@ export class GameManager {
                 }
             }
         });
+
+        // NOVO: Atualiza a posição dos inimigos
+        this.enemies.forEach(enemy => {
+            enemy.mover();
+        });
+
         atualizarBombas();
         atualizarExplosoes();
         this.verificarDestruicaoPowerups(); // NOVO: Chama a nova função para verificar a destruição dos powerups
@@ -209,7 +246,7 @@ export class GameManager {
         this.ctx.save();
         this.configurarCamera();
         const arenaFechando = this.areaPiscaTimer > 0;
-        desenharTudo(this.ctx, mapa, this.players, bombas, explosoes, powerups, arenaFechando, this.areaPiscaTimer);
+        desenharTudo(this.ctx, mapa, this.players, bombas, explosoes, powerups, this.enemies, arenaFechando, this.areaPiscaTimer);
         this.ctx.restore();
         this.atualizarHUD(); // NOVO: Chama a atualização do HUD
         requestAnimationFrame(() => this.gameLoop());

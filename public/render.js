@@ -2,8 +2,8 @@
 import { TAMANHO_BLOCO, LARGURA_MAPA, ALTURA_MAPA, fechamentoNivel } from './map.js';
 import { Block } from './powerup.js'; // A classe Block agora é importada de powerup.js
 
-// Novo parâmetro tempoRestante
-export function desenharTudo(ctx, mapa, players, bombas, explosoes, powerups, arenaFechando, areaPiscaTimer) {
+// Adicionado o parâmetro 'enemies'
+export function desenharTudo(ctx, mapa, players, bombas, explosoes, powerups, enemies, arenaFechando, areaPiscaTimer) {
     desenharFundo(ctx, LARGURA_MAPA, ALTURA_MAPA);
     desenharMapa(ctx, mapa);
     desenharAreasDeFechamento(ctx, arenaFechando, areaPiscaTimer);
@@ -11,6 +11,7 @@ export function desenharTudo(ctx, mapa, players, bombas, explosoes, powerups, ar
     desenharExplosoes(ctx, explosoes);
     desenharPowerups(ctx, powerups);
     desenharPlayers(ctx, players);
+    desenharEnemies(ctx, enemies); // NOVO: Chama a função para desenhar os inimigos
 }
 
 function desenharFundo(ctx, larguraMapa, alturaMapa) {
@@ -144,5 +145,15 @@ function desenharPowerups(ctx, powerups) {
                 ctx.fillText('B', p.x, p.y);
             }
         }
+    });
+}
+
+// NOVO: Função para desenhar os inimigos
+function desenharEnemies(ctx, enemies) {
+    enemies.forEach(enemy => {
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.tamanho / 2, 0, Math.PI * 2, false);
+        ctx.fillStyle = '#e74c3c'; // Cor vermelha para os inimigos
+        ctx.fill();
     });
 }

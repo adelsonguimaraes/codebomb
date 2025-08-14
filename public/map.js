@@ -27,7 +27,7 @@ export class Block {
 }
 
 // Inicializa a estrutura básica do mapa com paredes e espaços vazios
-function inicializarMapa() {
+export function inicializarMapa() {
     for (let y = 0; y < ALTURA_MAPA; y++) {
         mapa[y] = [];
         for (let x = 0; x < LARGURA_MAPA; x++) {
@@ -53,7 +53,7 @@ export function encontrarPosicaoInicialSegura() {
     return { x: 1, y: 1 };
 }
 
-// NOVO: Função refatorada para gerar blocos destrutíveis e power-ups de forma mais robusta
+// Função refatorada para gerar blocos destrutíveis e power-ups de forma mais robusta
 export function gerarBlocosDestrutiveis(posicoesIniciais) {
     const CHANCE_DESTRUTIVEL = 0.7;
     const posicoesElegiveis = [];
@@ -103,6 +103,37 @@ export function gerarBlocosDestrutiveis(posicoesIniciais) {
     }
 }
 
+// NOVO: Função para encontrar posições seguras para inimigos
+export function encontrarPosicoesInimigos(numeroInimigos, posicoesJogadores) {
+    const posicoesInimigos = [];
+    const posicoesElegiveis = [];
+
+    // Encontra todas as posições vazias que não estão perto dos jogadores
+    for (let y = 1; y < ALTURA_MAPA - 1; y++) {
+        for (let x = 1; x < LARGURA_MAPA - 1; x++) {
+            const isPosicaoInicial = posicoesJogadores.some(p => p.x === x && p.y === y);
+            const isPosicaoAoLado = posicoesJogadores.some(p =>
+                (p.x === x + 1 && p.y === y) ||
+                (p.x === x - 1 && p.y === y) ||
+                (p.x === x && p.y === y + 1) ||
+                (p.x === x && p.y === y - 1)
+            );
+
+            // A posição é elegível se for um espaço vazio e não estiver perto de um jogador
+            if (mapa[y][x].type === 0 && !isPosicaoInicial && !isPosicaoAoLado) {
+                posicoesElegiveis.push({ x, y });
+            }
+        }
+    }
+
+    // Sortear posições para os inimigos
+    for (let i = 0; i < numeroInimigos && posicoesElegiveis.length > 0; i++) {
+        const randomIndex = Math.floor(Math.random() * posicoesElegiveis.length);
+        posicoesInimigos.push(posicoesElegiveis.splice(randomIndex, 1)[0]);
+    }
+
+    return posicoesInimigos;
+}
 
 // Fechamento de Arena
 export let fechamentoNivel = 0;
