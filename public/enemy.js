@@ -1,11 +1,12 @@
 // enemy.js - Classe para inimigos NPC
 import { TAMANHO_BLOCO, LARGURA_MAPA, ALTURA_MAPA, mapa, Block } from './map.js';
 import { bombas } from './bomb.js';
+import { Player } from './player.js'; // NOVO: Importa a classe Player
 
 const DIRECTIONS = ['up', 'down', 'left', 'right'];
 
 export class Enemy {
-    constructor(gridX, gridY) {
+    constructor(gridX, gridY, player) { // MODIFICADO: Recebe uma referência ao jogador
         this.gridX = gridX;
         this.gridY = gridY;
         // Posição inicial centralizada no bloco
@@ -16,6 +17,8 @@ export class Enemy {
         this.direction = null; // Começa sem direção definida
         this.targetX = this.x;
         this.targetY = this.y;
+        this.player = player; // NOVO: Armazena a referência do jogador
+        this.isIrritated = false; // NOVO: Flag para o estado de irritação
     }
 
     // Método para verificar se o inimigo pode se mover para uma direção específica
@@ -60,32 +63,70 @@ export class Enemy {
 
     // Lógica principal de movimento e IA
     mover() {
+        // Calcula a distância do inimigo ao jogador em blocos
+        const distGridX = Math.abs(Math.floor(this.player.x / TAMANHO_BLOCO) - this.gridX);
+        const distGridY = Math.abs(Math.floor(this.player.y / TAMANHO_BLOCO) - this.gridY);
+        const playerDistanceBlocks = distGridX + distGridY;
+
+        // NOVO: Lógica de irritação
+        if (playerDistanceBlocks <= 2) {
+            this.isIrritated = true;
+        }
+        if (playerDistanceBlocks >= 3) {
+            this.isIrritated = false;
+        }
+
         // Se o inimigo atingiu o ponto central do bloco atual, ele toma uma nova decisão
         if (this.x === this.targetX && this.y === this.targetY) {
             this.direction = null;
 
-            // Filtra as direções válidas a partir da posição atual
-            const validDirections = DIRECTIONS.filter(dir => this.podeMoverPara(dir));
+            if (this.isIrritated) {
+                // Lógica de perseguição: move em direção ao jogador
+                const playerGridX = Math.floor(this.player.x / TAMANHO_BLOCO);
+                const playerGridY = Math.floor(this.player.y / TAMANHO_BLOCO);
 
-            if (validDirections.length > 0) {
-                // Escolhe uma nova direção válida aleatoriamente
-                this.direction = validDirections[Math.floor(Math.random() * validDirections.length)];
+                let direcaoX = (playerGridX > this.gridX) ? 'right' : (playerGridX < this.gridX) ? 'left' : null;
+                let direcaoY = (playerGridY > this.gridY) ? 'down' : (playerGridY < this.gridY) ? 'up' : null;
 
-                // Calcula a nova posição alvo (centro do próximo bloco)
-                switch (this.direction) {
-                    case 'up':
-                        this.targetY -= TAMANHO_BLOCO;
-                        break;
-                    case 'down':
-                        this.targetY += TAMANHO_BLOCO;
-                        break;
-                    case 'left':
-                        this.targetX -= TAMANHO_BLOCO;
-                        break;
-                    case 'right':
-                        this.targetX += TAMANHO_BLOCO;
-                        break;
+                const direcoesPossiveis = [];
+                if (direcaoX && this.podeMoverPara(direcaoX)) {
+                    direcoesPossiveis.push(direcaoX);
                 }
+                if (direcaoY && this.podeMoverPara(direcaoY)) {
+                    direcoesPossiveis.push(direcaoY);
+                }
+
+                // Se não puder se mover em direção ao jogador, tenta uma direção aleatória
+                if (direcoesPossiveis.length > 0) {
+                    this.direction = direcoesPossiveis[Math.floor(Math.random() * direcoesPossiveis.length)];
+                } else {
+                    const validDirections = DIRECTIONS.filter(dir => this.podeMoverPara(dir));
+                    if (validDirections.length > 0) {
+                        this.direction = validDirections[Math.floor(Math.random() * validDirections.length)];
+                    }
+                }
+            } else {
+                // Lógica de movimento aleatório
+                const validDirections = DIRECTIONS.filter(dir => this.podeMoverPara(dir));
+                if (validDirections.length > 0) {
+                    this.direction = validDirections[Math.floor(Math.random() * validDirections.length)];
+                }
+            }
+
+            // Calcula a nova posição alvo (centro do próximo bloco)
+            switch (this.direction) {
+                case 'up':
+                    this.targetY = (this.gridY - 1) * TAMANHO_BLOCO + TAMANHO_BLOCO / 2;
+                    break;
+                case 'down':
+                    this.targetY = (this.gridY + 1) * TAMANHO_BLOCO + TAMANHO_BLOCO / 2;
+                    break;
+                case 'left':
+                    this.targetX = (this.gridX - 1) * TAMANHO_BLOCO + TAMANHO_BLOCO / 2;
+                    break;
+                case 'right':
+                    this.targetX = (this.gridX + 1) * TAMANHO_BLOCO + TAMANHO_BLOCO / 2;
+                    break;
             }
         }
 

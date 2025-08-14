@@ -46,15 +46,17 @@ export class GameManager {
         const posicaoInicial = encontrarPosicaoInicialSegura();
         const posicoesJogadores = [{ x: posicaoInicial.x, y: posicaoInicial.y }];
 
+        // A classe Player agora espera as coordenadas do grid, o offset é calculado internamente
+        const player1 = new Player(1, posicaoInicial.x * TAMANHO_BLOCO, posicaoInicial.y * TAMANHO_BLOCO);
+        this.players.push(player1);
+
         // CORREÇÃO: Primeiro, encontramos as posições seguras para os inimigos...
         let posicoesEntidades = [...posicoesJogadores];
         if (ENABLE_ENEMIES) {
             const posicoesInimigos = encontrarPosicoesInimigos(NUMBER_OF_ENEMIES, posicoesJogadores);
             posicoesInimigos.forEach(enemyPos => {
-                // ...e depois centralizamos e criamos o inimigo.
-                const xCentralizado = enemyPos.x;
-                const yCentralizado = enemyPos.y;
-                const enemy = new Enemy(xCentralizado, yCentralizado);
+                // MODIFICADO: Passa as coordenadas de grid e a instância do jogador para o construtor do inimigo
+                const enemy = new Enemy(enemyPos.x, enemyPos.y, player1);
                 this.enemies.push(enemy);
                 posicoesEntidades.push(enemyPos);
             });
@@ -62,10 +64,6 @@ export class GameManager {
 
         // ...E só agora geramos os blocos destrutíveis, evitando as posições dos jogadores e inimigos
         gerarBlocosDestrutiveis(posicoesEntidades);
-
-        // A classe Player agora espera as coordenadas do grid, o offset é calculado internamente
-        const player1 = new Player(1, posicaoInicial.x * TAMANHO_BLOCO, posicaoInicial.y * TAMANHO_BLOCO);
-        this.players.push(player1);
 
 
         this.canvas.width = window.innerWidth;
