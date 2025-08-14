@@ -13,7 +13,7 @@ export const powerups = [];
 export const POWERUP_CONFIG = {
     explosionRadius: 5, // Quantidade de power-ups de raio de explosão
     speed: 3, // Quantidade de power-ups de velocidade
-    bombCount: 3 // NOVO: Quantidade de power-ups de quantidade de bombas
+    bombCount: 3 // Quantidade de power-ups de quantidade de bombas
 };
 
 // Classe para representar um bloco no mapa
@@ -42,14 +42,26 @@ export function inicializarMapa() {
 
 inicializarMapa();
 
+/**
+ * Encontra uma posição inicial segura e aleatória no mapa.
+ * Anteriormente, retornava a primeira posição encontrada, agora retorna uma posição aleatória dentre todas as posições seguras.
+ */
 export function encontrarPosicaoInicialSegura() {
+    const posicoesVazias = [];
     for (let y = 1; y < ALTURA_MAPA - 1; y++) {
         for (let x = 1; x < LARGURA_MAPA - 1; x++) {
             if (mapa[y][x].type === 0) {
-                return { x, y };
+                posicoesVazias.push({ x, y });
             }
         }
     }
+
+    if (posicoesVazias.length > 0) {
+        const randomIndex = Math.floor(Math.random() * posicoesVazias.length);
+        return posicoesVazias[randomIndex];
+    }
+
+    // Retorna uma posição padrão se nenhuma for encontrada, para evitar erros.
     return { x: 1, y: 1 };
 }
 
@@ -160,7 +172,7 @@ export function fecharArena() {
             novosFechamentos.push({ x: x, y: fechamentoNivel });
         }
         if (mapa[ALTURA_MAPA - 1 - fechamentoNivel][x].type !== 2) {
-            mapa[ALTURA_MAPA - 1 - fechamentoNivel][x].type = 2; // Novo tipo de bloco para fechamento
+            mapa[ALTURA_MAPA - 1 - fechamentoNivel].type = 2; // Novo tipo de bloco para fechamento
             novosFechamentos.push({ x: x, y: ALTURA_MAPA - 1 - fechamentoNivel });
         }
     }
