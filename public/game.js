@@ -4,6 +4,8 @@ import { Player, teclasPressionadas } from './player.js';
 import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } from './bomb.js';
 import { desenharTudo } from './render.js';
 import { Enemy } from './enemy.js';
+import { ExplosionRadiusPowerup, SpeedPowerup, BombCountPowerup } from './powerup.js';
+
 
 // Constantes e variáveis de estado do jogo
 const ZOOM_NIVEL = 1.5;
@@ -110,6 +112,40 @@ export class GameManager {
         }
     }
 
+    // NOVO: Método para destruir entidades que são "esmagadas" pelos blocos de fechamento da arena.
+    // Ele será chamado no gameLoop após fecharArena() ser executado.
+    destruirEntidadesPorFechamento(novosFechamentos) {
+        if (!novosFechamentos || novosFechamentos.length === 0) return;
+
+        // Verifica inimigos
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            const enemyGridX = Math.floor(enemy.x / TAMANHO_BLOCO);
+            const enemyGridY = Math.floor(enemy.y / TAMANHO_BLOCO);
+
+            if (novosFechamentos.some(f => f.x === enemyGridX && f.y === enemyGridY)) {
+                this.logEvent(`Um inimigo foi esmagado pelo fechamento da arena!`);
+                this.enemies.splice(i, 1);
+            }
+        }
+
+        // Verifica power-ups
+        for (let i = powerups.length - 1; i >= 0; i--) {
+            const powerup = powerups[i];
+            const powerupGridX = Math.floor(powerup.x / TAMANHO_BLOCO);
+            const powerupGridY = Math.floor(powerup.y / TAMANHO_BLOCO);
+
+            if (novosFechamentos.some(f => f.x === powerupGridX && f.y === powerupGridY)) {
+                this.logEvent(`Um power-up foi esmagado pelo fechamento da arena!`);
+                powerups.splice(i, 1);
+            }
+        }
+
+        // LÓGICA FUTURA: Adicione a verificação para os jogadores aqui, se necessário.
+        // Por exemplo:
+        // this.players.forEach(player => { ... });
+    }
+
 
     atualizarEstado() {
         if (this.tempoRestante > 0) {
@@ -194,7 +230,12 @@ export class GameManager {
                 } else {
                     const tamanhoAtualArena = LARGURA_MAPA - 2 * fechamentoNivel;
                     if (tamanhoAtualArena > TAMANHO_MINIMO_ARENA) {
-                        fecharArena();
+                        // AQUI ESTÁ A MUDANÇA:
+                        // 1. Chamamos a função fecharArena e guardamos as coordenadas dos novos blocos.
+                        const novosFechamentos = fecharArena();
+                        // 2. Passamos essas coordenadas para a nova função que destrói as entidades.
+                        this.destruirEntidadesPorFechamento(novosFechamentos);
+
                         this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60;
                         this.areaPiscaTimer = -1;
                     } else {

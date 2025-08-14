@@ -135,25 +135,38 @@ export function encontrarPosicoesInimigos(numeroInimigos, posicoesJogadores) {
     return posicoesInimigos;
 }
 
-// Fechamento de Arena
+// Fechamento de Arena - Agora retorna os blocos de fechamento para que game.js possa lidar com a destruição de entidades.
 export let fechamentoNivel = 0;
 
 export function fecharArena() {
-    if (fechamentoNivel >= LARGURA_MAPA / 2) return;
+    // Array para armazenar as novas coordenadas de fechamento
+    const novosFechamentos = [];
+    if (fechamentoNivel >= LARGURA_MAPA / 2) return novosFechamentos;
 
     // Lógica para colocar as novas paredes (tipo 2)
-    for (let y = 0; y < ALTURA_MAPA; y++) {
-        if (y >= fechamentoNivel && y < ALTURA_MAPA - fechamentoNivel) {
+    for (let y = fechamentoNivel; y < ALTURA_MAPA - fechamentoNivel; y++) {
+        if (mapa[y][fechamentoNivel].type !== 2) {
             mapa[y][fechamentoNivel].type = 2; // Novo tipo de bloco para fechamento
+            novosFechamentos.push({ x: fechamentoNivel, y: y });
+        }
+        if (mapa[y][LARGURA_MAPA - 1 - fechamentoNivel].type !== 2) {
             mapa[y][LARGURA_MAPA - 1 - fechamentoNivel].type = 2; // Novo tipo de bloco para fechamento
+            novosFechamentos.push({ x: LARGURA_MAPA - 1 - fechamentoNivel, y: y });
         }
     }
-    for (let x = 0; x < LARGURA_MAPA; x++) {
-        if (x >= fechamentoNivel && x < LARGURA_MAPA - fechamentoNivel) {
+    for (let x = fechamentoNivel; x < LARGURA_MAPA - fechamentoNivel; x++) {
+        if (mapa[fechamentoNivel][x].type !== 2) {
             mapa[fechamentoNivel][x].type = 2; // Novo tipo de bloco para fechamento
+            novosFechamentos.push({ x: x, y: fechamentoNivel });
+        }
+        if (mapa[ALTURA_MAPA - 1 - fechamentoNivel][x].type !== 2) {
             mapa[ALTURA_MAPA - 1 - fechamentoNivel][x].type = 2; // Novo tipo de bloco para fechamento
+            novosFechamentos.push({ x: x, y: ALTURA_MAPA - 1 - fechamentoNivel });
         }
     }
 
     fechamentoNivel++;
+
+    // Retorna as coordenadas dos novos blocos de fechamento
+    return novosFechamentos;
 }
