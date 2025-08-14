@@ -44,7 +44,6 @@ inicializarMapa();
 
 /**
  * Encontra uma posição inicial segura e aleatória no mapa.
- * Anteriormente, retornava a primeira posição encontrada, agora retorna uma posição aleatória dentre todas as posições seguras.
  */
 export function encontrarPosicaoInicialSegura() {
     const posicoesVazias = [];
@@ -151,30 +150,30 @@ export function encontrarPosicoesInimigos(numeroInimigos, posicoesJogadores) {
 export let fechamentoNivel = 0;
 
 export function fecharArena() {
-    // Array para armazenar as novas coordenadas de fechamento
     const novosFechamentos = [];
     if (fechamentoNivel >= LARGURA_MAPA / 2) return novosFechamentos;
 
     // Lógica para colocar as novas paredes (tipo 2)
-    for (let y = fechamentoNivel; y < ALTURA_MAPA - fechamentoNivel; y++) {
-        if (mapa[y][fechamentoNivel].type !== 2) {
-            mapa[y][fechamentoNivel].type = 2; // Novo tipo de bloco para fechamento
-            novosFechamentos.push({ x: fechamentoNivel, y: y });
-        }
-        if (mapa[y][LARGURA_MAPA - 1 - fechamentoNivel].type !== 2) {
-            mapa[y][LARGURA_MAPA - 1 - fechamentoNivel].type = 2; // Novo tipo de bloco para fechamento
-            novosFechamentos.push({ x: LARGURA_MAPA - 1 - fechamentoNivel, y: y });
-        }
-    }
+    // Fechamento da parede de cima e de baixo
     for (let x = fechamentoNivel; x < LARGURA_MAPA - fechamentoNivel; x++) {
-        if (mapa[fechamentoNivel][x].type !== 2) {
-            mapa[fechamentoNivel][x].type = 2; // Novo tipo de bloco para fechamento
-            novosFechamentos.push({ x: x, y: fechamentoNivel });
-        }
-        if (mapa[ALTURA_MAPA - 1 - fechamentoNivel][x].type !== 2) {
-            mapa[ALTURA_MAPA - 1 - fechamentoNivel].type = 2; // Novo tipo de bloco para fechamento
-            novosFechamentos.push({ x: x, y: ALTURA_MAPA - 1 - fechamentoNivel });
-        }
+        // Parede de cima
+        mapa[fechamentoNivel][x].type = 2;
+        novosFechamentos.push({ x: x, y: fechamentoNivel });
+
+        // Parede de baixo
+        mapa[ALTURA_MAPA - 1 - fechamentoNivel][x].type = 2;
+        novosFechamentos.push({ x: x, y: ALTURA_MAPA - 1 - fechamentoNivel });
+    }
+
+    // Fechamento das paredes laterais, excluindo os cantos que já foram fechados
+    for (let y = fechamentoNivel + 1; y < ALTURA_MAPA - 1 - fechamentoNivel; y++) {
+        // Parede da esquerda
+        mapa[y][fechamentoNivel].type = 2;
+        novosFechamentos.push({ x: fechamentoNivel, y: y });
+
+        // Parede da direita
+        mapa[y][LARGURA_MAPA - 1 - fechamentoNivel].type = 2;
+        novosFechamentos.push({ x: LARGURA_MAPA - 1 - fechamentoNivel, y: y });
     }
 
     fechamentoNivel++;
