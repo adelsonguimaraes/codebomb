@@ -66,6 +66,30 @@ export class GameManager {
         }
     }
 
+    // Lógica para destruir power-ups atingidos por explosões
+    verificarDestruicaoPowerups() {
+        for (let i = powerups.length - 1; i >= 0; i--) {
+            const powerup = powerups[i];
+            const powerupGridX = Math.floor(powerup.x / TAMANHO_BLOCO);
+            const powerupGridY = Math.floor(powerup.y / TAMANHO_BLOCO);
+
+            // Verifica se o power-up está na mesma célula de alguma explosão ativa
+            const atingido = explosoes.some(exp => {
+                // A explosão atinge o powerup apenas se o timer de imunidade dele for 0
+                if (Math.floor(exp.x / TAMANHO_BLOCO) === powerupGridX && Math.floor(exp.y / TAMANHO_BLOCO) === powerupGridY && powerup.immunityTimer <= 0) {
+                    return true;
+                }
+                return false;
+            });
+
+            if (atingido) {
+                this.logEvent(`Power-up ${powerup.type} foi destruído por uma explosão!`);
+                powerups.splice(i, 1);
+            }
+        }
+    }
+
+
     atualizarEstado() {
         // NOVO: Decrementa o tempo restante do jogo
         if (this.tempoRestante > 0) {
@@ -76,6 +100,17 @@ export class GameManager {
                 this.fechamentoAtivo = true;
             }
         }
+
+        // NOVO: Lógica para o timer de imunidade do power-up
+        powerups.forEach(powerup => {
+            if (powerup.immunityTimer > 0) {
+                powerup.immunityTimer--;
+                // Lógica de piscar: torna o power-up visível/invisível a cada 5 quadros
+                powerup.visible = (Math.floor(powerup.immunityTimer / 5) % 2) === 0;
+            } else {
+                powerup.visible = true;
+            }
+        });
 
         this.players.forEach(player => {
             player.mover();
@@ -91,7 +126,7 @@ export class GameManager {
                 ) {
                     // NOVO: Loga o evento de power-up coletado
                     this.logEvent(`Jogador ${player.id} pegou o power-up: ${powerup.type}!`);
-                    
+
                     // Adicionando a chamada do método correto para o novo power-up
                     powerup.applyEffect(player);
                     powerups.splice(i, 1);
@@ -100,10 +135,11 @@ export class GameManager {
         });
         atualizarBombas();
         atualizarExplosoes();
+        this.verificarDestruicaoPowerups(); // NOVO: Chama a nova função para verificar a destruição dos powerups
 
         // NOVO: Verifica se a tecla de espaço está pressionada para plantar uma bomba
         if (teclasPressionadas[' '] && this.players[0].bombasAtivas < this.players[0].maxBombas) {
-            plantarBomba(this.players[0]);
+            plantarBomba(this.players[0], this.logEvent.bind(this)); // NOVO: Passa a função de log como callback
         }
 
         if (this.fechamentoAtivo) {
@@ -135,7 +171,7 @@ export class GameManager {
             }
         }
     }
-    
+
     // NOVO: Método para atualizar o HUD
     atualizarHUD() {
         const segundos = Math.floor(this.tempoRestante / 60);

@@ -24,7 +24,7 @@ export const explosoes = [];
 
 // A classe Bomb agora encapsula as propriedades e o comportamento de uma bomba.
 export class Bomb {
-    constructor(player) {
+    constructor(player, logEventCallback) {
         this.gridX = Math.floor(player.x / TAMANHO_BLOCO);
         this.gridY = Math.floor(player.y / TAMANHO_BLOCO);
         this.x = this.gridX * TAMANHO_BLOCO + TAMANHO_BLOCO / 2;
@@ -32,10 +32,11 @@ export class Bomb {
         this.timer = TEMPO_BOMBA;
         this.podePassar = true;
 
-        // CORREÇÃO: Armazena a referência direta ao objeto player e seu raio de explosão
+        // Armazena a referência direta ao objeto player e seu raio de explosão
         this.playerRef = player;
         this.playerRef.bombasAtivas++;
         this.explosionRadius = player.explosionRadius;
+        this.logEvent = logEventCallback;
     }
 
     // Método para atualizar o estado da bomba (diminuir o timer)
@@ -50,7 +51,7 @@ export class Bomb {
 
     // Método para lidar com a explosão da bomba
     explodir() {
-        // CORREÇÃO: Usa a referência do jogador armazenada na classe
+        // Usa a referência do jogador armazenada na classe
         this.playerRef.bombasAtivas--;
 
         const areaExplosao = [
@@ -107,13 +108,21 @@ export class Bomb {
                 if (bloco instanceof Block && bloco.type === 3) {
                     bloco.type = 0; // Torna o bloco vazio
 
-                    // Lógica para criar o power-up correto
+                    // Lógica para criar o power-up corretamente
+                    let newPowerup = null;
                     if (bloco.powerupType === 'explosionRadius') {
-                        powerups.push(new ExplosionRadiusPowerup(pos.x, pos.y));
+                        newPowerup = new ExplosionRadiusPowerup(pos.x, pos.y);
                     } else if (bloco.powerupType === 'speed') {
-                        powerups.push(new SpeedPowerup(pos.x, pos.y));
-                    } else if (bloco.powerupType === 'bombCount') { // NOVO: Lógica para o power-up de quantidade de bombas
-                        powerups.push(new BombCountPowerup(pos.x, pos.y));
+                        newPowerup = new SpeedPowerup(pos.x, pos.y);
+                    } else if (bloco.powerupType === 'bombCount') {
+                        newPowerup = new BombCountPowerup(pos.x, pos.y);
+                    }
+
+                    if (newPowerup) {
+                        // Adiciona o timer de imunidade e a propriedade de visibilidade
+                        newPowerup.immunityTimer = 60; // 60 frames de imunidade
+                        newPowerup.visible = true;
+                        powerups.push(newPowerup);
                     }
                 }
                 // Cria uma nova instância da classe Explosion
@@ -123,7 +132,7 @@ export class Bomb {
     }
 }
 
-export function plantarBomba(player) {
+export function plantarBomba(player, logEventCallback) {
     const gridX = Math.floor(player.x / TAMANHO_BLOCO);
     const gridY = Math.floor(player.y / TAMANHO_BLOCO);
 
@@ -131,8 +140,8 @@ export function plantarBomba(player) {
     const bombaExistente = bombas.some(b => b.gridX === gridX && b.gridY === gridY);
     if (bombaExistente) return;
 
-    // Cria uma nova instância da classe Bomb e a adiciona ao array
-    bombas.push(new Bomb(player));
+    // Cria uma nova instância da classe Bomb e a adiciona ao array, passando a função de log
+    bombas.push(new Bomb(player, logEventCallback));
 }
 
 export function atualizarBombas() {
