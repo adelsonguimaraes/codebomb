@@ -1,12 +1,12 @@
 // enemy.js - Classe para inimigos NPC
 import { TAMANHO_BLOCO, LARGURA_MAPA, ALTURA_MAPA, mapa, Block } from './map.js';
 import { bombas } from './bomb.js';
-import { Player } from './player.js'; // NOVO: Importa a classe Player
+import { Player } from './player.js';
 
 const DIRECTIONS = ['up', 'down', 'left', 'right'];
 
 export class Enemy {
-    constructor(gridX, gridY, player) { // MODIFICADO: Recebe uma referência ao jogador
+    constructor(gridX, gridY, player) {
         this.gridX = gridX;
         this.gridY = gridY;
         // Posição inicial centralizada no bloco
@@ -17,8 +17,8 @@ export class Enemy {
         this.direction = null; // Começa sem direção definida
         this.targetX = this.x;
         this.targetY = this.y;
-        this.player = player; // NOVO: Armazena a referência do jogador
-        this.isIrritated = false; // NOVO: Flag para o estado de irritação
+        this.player = player;
+        this.isIrritated = false;
     }
 
     // Método para verificar se o inimigo pode se mover para uma direção específica
@@ -68,7 +68,7 @@ export class Enemy {
         const distGridY = Math.abs(Math.floor(this.player.y / TAMANHO_BLOCO) - this.gridY);
         const playerDistanceBlocks = distGridX + distGridY;
 
-        // NOVO: Lógica de irritação
+        // Lógica de irritação
         if (playerDistanceBlocks <= 2) {
             this.isIrritated = true;
         }
@@ -148,5 +148,24 @@ export class Enemy {
             this.gridX = Math.floor(this.x / TAMANHO_BLOCO);
             this.gridY = Math.floor(this.y / TAMANHO_BLOCO);
         }
+    }
+
+    // NOVO: Método para desenhar o inimigo e o seu rosto
+    desenhar(ctx) {
+        // Desenha o corpo do inimigo (círculo vermelho)
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.tamanho / 2, 0, Math.PI * 2, false);
+        ctx.fillStyle = this.isIrritated ? '#c0392b' : '#e74c3c'; // Cor muda para indicar irritação
+        ctx.fill();
+
+        // Desenha o rosto do inimigo
+        ctx.fillStyle = '#ecf0f1';
+        ctx.font = `${this.tamanho * 0.4}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // O rosto muda de acordo com o estado de irritação
+        const face = this.isIrritated ? 'u\_/u' : '-u-';
+        ctx.fillText(face, this.x, this.y);
     }
 }

@@ -2,7 +2,7 @@
 import { TAMANHO_BLOCO, LARGURA_MAPA, ALTURA_MAPA, fechamentoNivel } from './map.js';
 import { Block } from './powerup.js'; // A classe Block agora é importada de powerup.js
 
-// Adicionado o parâmetro 'enemies'
+// Função principal de desenho
 export function desenharTudo(ctx, mapa, players, bombas, explosoes, powerups, enemies, arenaFechando, areaPiscaTimer) {
     desenharFundo(ctx, LARGURA_MAPA, ALTURA_MAPA);
     desenharMapa(ctx, mapa);
@@ -94,10 +94,18 @@ function desenharAreasDeFechamento(ctx, arenaFechando, areaPiscaTimer) {
 
 function desenharPlayers(ctx, players) {
     players.forEach(player => {
+        // Desenha o corpo do jogador
         ctx.beginPath();
         ctx.arc(player.x, player.y, player.tamanho / 2, 0, Math.PI * 2, false);
         ctx.fillStyle = '#3498db';
         ctx.fill();
+
+        // Desenha o rosto do jogador
+        ctx.fillStyle = '#ecf0f1';
+        ctx.font = `${player.tamanho * 0.4}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('^-^', player.x, player.y);
     });
 }
 
@@ -148,12 +156,23 @@ function desenharPowerups(ctx, powerups) {
     });
 }
 
-// NOVO: Função para desenhar os inimigos
+// NOVO: Função para desenhar os inimigos com o rosto
 function desenharEnemies(ctx, enemies) {
     enemies.forEach(enemy => {
+        // Desenha o corpo do inimigo (círculo vermelho)
         ctx.beginPath();
         ctx.arc(enemy.x, enemy.y, enemy.tamanho / 2, 0, Math.PI * 2, false);
-        ctx.fillStyle = '#e74c3c'; // Cor vermelha para os inimigos
+        ctx.fillStyle = enemy.isIrritated ? '#c0392b' : '#e74c3c'; // Cor muda para indicar irritação
         ctx.fill();
+
+        // Desenha o rosto do inimigo
+        ctx.fillStyle = '#ecf0f1';
+        ctx.font = `${enemy.tamanho * 0.38}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // O rosto muda de acordo com o estado de irritação
+        const face = enemy.isIrritated ? 'Ù_Ú' : '-u-';
+        ctx.fillText(face, enemy.x, enemy.y);
     });
 }
