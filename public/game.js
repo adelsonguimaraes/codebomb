@@ -4,7 +4,6 @@ import { Player, teclasPressionadas } from './player.js';
 import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } from './bomb.js';
 import { desenharTudo } from './render.js';
 import { Enemy } from './enemy.js';
-import { ExplosionRadiusPowerup, SpeedPowerup, BombCountPowerup } from './powerup.js';
 import { updateLivesDisplay } from './ui.js'; // NOVO: Importa a função para atualizar a interface de vidas
 
 // Constantes e variáveis de estado do jogo
@@ -155,36 +154,25 @@ export class GameManager {
         }
     }
 
-    // NOVO: Função para checar se o jogador foi atingido por uma explosão
-    verificarDanoJogadorExplosao() {
+    // Refatoração: Nova função privada para lidar com todo o dano do jogador
+    _verificarDano() {
         this.players.forEach(player => {
             if (!player.isAtivo) return;
-
             const playerGridX = player.gridX;
             const playerGridY = player.gridY;
 
-            const atingido = explosoes.some(exp => {
+            // Checa se o jogador foi atingido por uma explosão
+            const atingidoPorExplosao = explosoes.some(exp => {
                 return (Math.floor(exp.x / TAMANHO_BLOCO) === playerGridX && Math.floor(exp.y / TAMANHO_BLOCO) === playerGridY);
             });
+            if (atingidoPorExplosao) {
+                player.takeDamage();
+            }
 
-            if (atingido && player.takeDamage())
-                this.logEvent(`Jogador ${player.id} ${DEATH_REASONS.explosion}`);
-
-        });
-    }
-
-    // NOVO: Função para checar se o jogador colidiu com um inimigo
-    verificarDanoJogadorInimigo() {
-        this.players.forEach(player => {
-            // Se o jogador já está morto, não precisamos verificar
-            if (!player.isAtivo) return;
-
-            // Loop através de todos os inimigos
+            // Checa se o jogador colidiu com um inimigo
             this.enemies.forEach(enemy => {
-                // Checa a colisão pelo grid
                 if (player.gridX === enemy.gridX && player.gridY === enemy.gridY) {
-                    if (player.takeDamage())
-                        this.logEvent(`Jogador ${player.id} ${DEATH_REASONS.enemy}`);
+                    player.takeDamage();
                 }
             });
         });
@@ -244,9 +232,8 @@ export class GameManager {
             }
         }
 
-        // NOVO: Chamamos as novas funções de verificação de dano
-        this.verificarDanoJogadorExplosao();
-        this.verificarDanoJogadorInimigo();
+        // NOVO: Chama a nova função consolidada de verificação de dano
+        this._verificarDano();
 
         atualizarBombas();
         atualizarExplosoes();
