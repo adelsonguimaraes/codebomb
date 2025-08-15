@@ -15,7 +15,6 @@ const TAMANHO_MINIMO_ARENA = 7;
 const TEMPO_TOTAL_SEGUNDOS = 120;
 
 // Configuração dos inimigos
-const ENABLE_ENEMIES = true;
 const NUMBER_OF_ENEMIES = 3;
 
 const DEATH_REASONS = {
@@ -73,7 +72,8 @@ export class GameManager {
     }
 
     _setupEnemies(posicoesJogadores) {
-        if (ENABLE_ENEMIES) {
+        // CORREÇÃO DO USUÁRIO APLICADA: Usando NUMBER_OF_ENEMIES > 0
+        if (NUMBER_OF_ENEMIES > 0) {
             const posicoesInimigos = encontrarPosicoesInimigos(NUMBER_OF_ENEMIES, posicoesJogadores);
             posicoesInimigos.forEach(enemyPos => {
                 const enemy = new Enemy(enemyPos.x, enemyPos.y, this.players[0]);
@@ -181,15 +181,41 @@ export class GameManager {
         });
     }
 
-    atualizarEstado() {
+    // NOVO: Lógica de fechamento da arena foi movida para esta nova função
+    _handleArenaClosing() {
         if (this.tempoRestante > 0) {
             this.tempoRestante--;
         } else {
             if (!this.fechamentoAtivo) {
                 this.fechamentoAtivo = true;
+                this.logEvent('Aviso: A arena está começando a fechar!');
+            }
+
+            if (this.fechamentoTimer > 0) {
+                this.fechamentoTimer--;
+            } else {
+                if (this.areaPiscaTimer === -1) {
+                    this.areaPiscaTimer = TEMPO_PISCAR_SEGUNDOS * 60;
+                }
+
+                if (this.areaPiscaTimer > 0) {
+                    this.areaPiscaTimer--;
+                } else {
+                    const tamanhoAtualArena = LARGURA_MAPA - 2 * fechamentoNivel;
+                    if (tamanhoAtualArena > TAMANHO_MINIMO_ARENA) {
+                        const novosFechamentos = fecharArena();
+                        this.destruirEntidadesPorFechamento(novosFechamentos);
+                        this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60;
+                        this.areaPiscaTimer = -1;
+                    } else {
+                        this.fechamentoAtivo = false;
+                    }
+                }
             }
         }
+    }
 
+    atualizarEstado() {
         powerups.forEach(powerup => {
             if (powerup.immunityTimer > 0) {
                 powerup.immunityTimer--;
@@ -244,35 +270,8 @@ export class GameManager {
             plantarBomba(this.players[0], this.logEvent.bind(this));
         }
 
-        if (this.fechamentoAtivo) {
-            if (!this.fechamentoAvisoFeito) {
-                this.logEvent('Aviso: A arena está começando a fechar!');
-                this.fechamentoAvisoFeito = true;
-            }
-
-            if (this.fechamentoTimer > 0) {
-                this.fechamentoTimer--;
-            } else {
-                if (this.areaPiscaTimer === -1) {
-                    this.areaPiscaTimer = TEMPO_PISCAR_SEGUNDOS * 60;
-                }
-
-                if (this.areaPiscaTimer > 0) {
-                    this.areaPiscaTimer--;
-                } else {
-                    const tamanhoAtualArena = LARGURA_MAPA - 2 * fechamentoNivel;
-                    if (tamanhoAtualArena > TAMANHO_MINIMO_ARENA) {
-                        const novosFechamentos = fecharArena();
-                        this.destruirEntidadesPorFechamento(novosFechamentos);
-
-                        this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60;
-                        this.areaPiscaTimer = -1;
-                    } else {
-                        this.fechamentoAtivo = false;
-                    }
-                }
-            }
-        }
+        // NOVO: Chama o novo método para lidar com o fechamento da arena
+        this._handleArenaClosing();
 
         if (this.players.length > 0) {
             updateLivesDisplay(this.players[0].vidas);
