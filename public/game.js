@@ -4,7 +4,7 @@ import { Player, teclasPressionadas } from './player.js';
 import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } from './bomb.js';
 import { desenharTudo } from './render.js';
 import { Enemy } from './enemy.js';
-import { updateLivesDisplay } from './ui.js'; // NOVO: Importa a função para atualizar a interface de vidas
+import { updateLivesDisplay } from './ui.js';
 
 // Constantes e variáveis de estado do jogo
 const ZOOM_NIVEL = 1.5;
@@ -43,12 +43,9 @@ export class GameManager {
         this._resetGameState();
         const posicoesEntidades = this._setupPlayers();
         this._setupEnemies(posicoesEntidades);
-
         gerarBlocosDestrutiveis(posicoesEntidades);
-
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
-
         this.logEvent('Jogo iniciado! Prepare-se para a batalha!');
     }
 
@@ -72,7 +69,6 @@ export class GameManager {
     }
 
     _setupEnemies(posicoesJogadores) {
-        // CORREÇÃO DO USUÁRIO APLICADA: Usando NUMBER_OF_ENEMIES > 0
         if (NUMBER_OF_ENEMIES > 0) {
             const posicoesInimigos = encontrarPosicoesInimigos(NUMBER_OF_ENEMIES, posicoesJogadores);
             posicoesInimigos.forEach(enemyPos => {
@@ -117,42 +113,31 @@ export class GameManager {
         }
     }
 
-    // NOVO: Método para destruir entidades que são "esmagadas" pelos blocos de fechamento da arena.
     destruirEntidadesPorFechamento(novosFechamentos) {
         if (!novosFechamentos || novosFechamentos.length === 0) return;
-
-        // Verifica jogadores
         this.players.forEach(player => {
             const playerGridX = player.gridX;
             const playerGridY = player.gridY;
-
             if (novosFechamentos.some(f => f.x === playerGridX && f.y === playerGridY)) {
                 this.logEvent(`Jogador ${player.id} ${DEATH_REASONS.smash}`);
-
                 player.takeDamage();
                 player.takeDamage();
                 player.takeDamage();
             }
         });
-
-        // Verifica inimigos
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
             const enemyGridX = enemy.gridX;
             const enemyGridY = enemy.gridY;
-
             if (novosFechamentos.some(f => f.x === enemyGridX && f.y === enemyGridY)) {
                 this.logEvent(`Um inimigo foi esmagado pelo fechamento da arena!`);
                 this.enemies.splice(i, 1);
             }
         }
-
-        // Verifica power-ups
         for (let i = powerups.length - 1; i >= 0; i--) {
             const powerup = powerups[i];
             const powerupGridX = Math.floor(powerup.x / TAMANHO_BLOCO);
             const powerupGridY = Math.floor(powerup.y / TAMANHO_BLOCO);
-
             if (novosFechamentos.some(f => f.x === powerupGridX && f.y === powerupGridY)) {
                 this.logEvent(`Um power-up foi esmagado pelo fechamento da arena!`);
                 powerups.splice(i, 1);
@@ -165,14 +150,12 @@ export class GameManager {
             if (!player.isAtivo) return;
             const playerGridX = player.gridX;
             const playerGridY = player.gridY;
-
             const atingidoPorExplosao = explosoes.some(exp => {
                 return (Math.floor(exp.x / TAMANHO_BLOCO) === playerGridX && Math.floor(exp.y / TAMANHO_BLOCO) === playerGridY);
             });
             if (atingidoPorExplosao) {
                 player.takeDamage();
             }
-
             this.enemies.forEach(enemy => {
                 if (player.gridX === enemy.gridX && player.gridY === enemy.gridY) {
                     player.takeDamage();
@@ -181,7 +164,6 @@ export class GameManager {
         });
     }
 
-    // NOVO: Lógica de fechamento da arena foi movida para esta nova função
     _handleArenaClosing() {
         if (this.tempoRestante > 0) {
             this.tempoRestante--;
@@ -190,14 +172,12 @@ export class GameManager {
                 this.fechamentoAtivo = true;
                 this.logEvent('Aviso: A arena está começando a fechar!');
             }
-
             if (this.fechamentoTimer > 0) {
                 this.fechamentoTimer--;
             } else {
                 if (this.areaPiscaTimer === -1) {
                     this.areaPiscaTimer = TEMPO_PISCAR_SEGUNDOS * 60;
                 }
-
                 if (this.areaPiscaTimer > 0) {
                     this.areaPiscaTimer--;
                 } else {
@@ -215,7 +195,7 @@ export class GameManager {
         }
     }
 
-    atualizarEstado() {
+    _handlePowerups() {
         powerups.forEach(powerup => {
             if (powerup.immunityTimer > 0) {
                 powerup.immunityTimer--;
@@ -224,9 +204,7 @@ export class GameManager {
                 powerup.visible = true;
             }
         });
-
         this.players.forEach(player => {
-            player.mover();
             for (let i = powerups.length - 1; i >= 0; i--) {
                 const powerup = powerups[i];
                 if (
@@ -240,17 +218,24 @@ export class GameManager {
                     powerups.splice(i, 1);
                 }
             }
+        });
+    }
+
+    atualizarEstado() {
+        // NOVO: Chama o novo método para lidar com power-ups
+        this._handlePowerups();
+
+        this.players.forEach(player => {
+            player.mover();
             player.update();
         });
 
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
             enemy.mover();
-
             const atingido = explosoes.some(exp => {
                 return (Math.floor(exp.x / TAMANHO_BLOCO) === enemy.gridX && Math.floor(exp.y / TAMANHO_BLOCO) === enemy.gridY);
             });
-
             if (atingido) {
                 const isDefeated = enemy.takeDamage();
                 if (isDefeated) {
@@ -261,7 +246,6 @@ export class GameManager {
         }
 
         this._verificarDano();
-
         atualizarBombas();
         atualizarExplosoes();
         this.verificarDestruicaoPowerups();
@@ -270,7 +254,6 @@ export class GameManager {
             plantarBomba(this.players[0], this.logEvent.bind(this));
         }
 
-        // NOVO: Chama o novo método para lidar com o fechamento da arena
         this._handleArenaClosing();
 
         if (this.players.length > 0) {
