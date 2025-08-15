@@ -41,33 +41,9 @@ export class GameManager {
     }
 
     iniciarJogo() {
-        inicializarMapa();
-        this.fechamentoAtivo = false;
-        this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60;
-        this.areaPiscaTimer = -1;
-        this.tempoRestante = TEMPO_TOTAL_SEGUNDOS * 60;
-        this.fechamentoAvisoFeito = false;
-        this.players = []; // Reset players
-        this.enemies = []; // Reset enemies
-
-        const posicaoInicial = encontrarPosicaoInicialSegura();
-        const posicoesJogadores = [{ x: posicaoInicial.x, y: posicaoInicial.y }];
-
-        const player1 = new Player(1, posicaoInicial.x * TAMANHO_BLOCO, posicaoInicial.y * TAMANHO_BLOCO);
-        this.players.push(player1);
-
-        // NOVO: Inicializa o display de vidas do jogador
-        updateLivesDisplay(player1.vidas);
-
-        let posicoesEntidades = [...posicoesJogadores];
-        if (ENABLE_ENEMIES) {
-            const posicoesInimigos = encontrarPosicoesInimigos(NUMBER_OF_ENEMIES, posicoesJogadores);
-            posicoesInimigos.forEach(enemyPos => {
-                const enemy = new Enemy(enemyPos.x, enemyPos.y, player1);
-                this.enemies.push(enemy);
-                posicoesEntidades.push(enemyPos);
-            });
-        }
+        this._resetGameState();
+        const posicoesEntidades = this._setupPlayers();
+        this._setupEnemies(posicoesEntidades);
 
         gerarBlocosDestrutiveis(posicoesEntidades);
 
@@ -75,6 +51,36 @@ export class GameManager {
         this.canvas.height = window.innerHeight;
 
         this.logEvent('Jogo iniciado! Prepare-se para a batalha!');
+    }
+
+    _resetGameState() {
+        inicializarMapa();
+        this.fechamentoAtivo = false;
+        this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60;
+        this.areaPiscaTimer = -1;
+        this.tempoRestante = TEMPO_TOTAL_SEGUNDOS * 60;
+        this.fechamentoAvisoFeito = false;
+        this.players = [];
+        this.enemies = [];
+    }
+
+    _setupPlayers() {
+        const posicaoInicial = encontrarPosicaoInicialSegura();
+        const player1 = new Player(1, posicaoInicial.x * TAMANHO_BLOCO, posicaoInicial.y * TAMANHO_BLOCO);
+        this.players.push(player1);
+        updateLivesDisplay(player1.vidas);
+        return [{ x: posicaoInicial.x, y: posicaoInicial.y }];
+    }
+
+    _setupEnemies(posicoesJogadores) {
+        if (ENABLE_ENEMIES) {
+            const posicoesInimigos = encontrarPosicoesInimigos(NUMBER_OF_ENEMIES, posicoesJogadores);
+            posicoesInimigos.forEach(enemyPos => {
+                const enemy = new Enemy(enemyPos.x, enemyPos.y, this.players[0]);
+                this.enemies.push(enemy);
+                posicoesJogadores.push(enemyPos);
+            });
+        }
     }
 
     logEvent(message) {
@@ -154,14 +160,12 @@ export class GameManager {
         }
     }
 
-    // Refatoração: Nova função privada para lidar com todo o dano do jogador
     _verificarDano() {
         this.players.forEach(player => {
             if (!player.isAtivo) return;
             const playerGridX = player.gridX;
             const playerGridY = player.gridY;
 
-            // Checa se o jogador foi atingido por uma explosão
             const atingidoPorExplosao = explosoes.some(exp => {
                 return (Math.floor(exp.x / TAMANHO_BLOCO) === playerGridX && Math.floor(exp.y / TAMANHO_BLOCO) === playerGridY);
             });
@@ -169,7 +173,6 @@ export class GameManager {
                 player.takeDamage();
             }
 
-            // Checa se o jogador colidiu com um inimigo
             this.enemies.forEach(enemy => {
                 if (player.gridX === enemy.gridX && player.gridY === enemy.gridY) {
                     player.takeDamage();
@@ -211,7 +214,6 @@ export class GameManager {
                     powerups.splice(i, 1);
                 }
             }
-            // NOVO: Atualiza o estado de invencibilidade do player
             player.update();
         });
 
@@ -232,7 +234,6 @@ export class GameManager {
             }
         }
 
-        // NOVO: Chama a nova função consolidada de verificação de dano
         this._verificarDano();
 
         atualizarBombas();
@@ -273,8 +274,6 @@ export class GameManager {
             }
         }
 
-        // NOVO: Chama a função para atualizar o display de vidas do jogador
-        // Isso garante que a UI seja sincronizada com o estado atual do jogador.
         if (this.players.length > 0) {
             updateLivesDisplay(this.players[0].vidas);
         }
