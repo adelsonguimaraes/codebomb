@@ -13,6 +13,8 @@
             overflow: hidden;
             font-family: Arial, sans-serif;
             color: white;
+            position: relative;
+            /* Adicionado para posicionar elementos filhos */
         }
 
         #gameCanvas {
@@ -58,25 +60,67 @@
             white-space: nowrap;
             transition: color 0.5s ease-in-out, font-size 0.5s ease-in-out;
             font-size: 15px;
-            /* Tamanho da fonte para a mensagem mais recente */
             color: white;
         }
 
         /* Classe para mensagens antigas */
         #event-log p.old-message {
             color: #c5c2c2;
-            /* Cor cinza para mensagens antigas */
             font-size: 13px;
-            /* Tamanho da fonte menor para mensagens antigas */
+        }
+
+        /* NOVO: Estilo para a interface de vidas do jogador */
+        .ui-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(44, 62, 80, 0.7);
+            border: 2px solid #1abc9c;
+            border-radius: 8px;
+            padding: 10px 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .ui-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #f1c40f;
+            text-align: center;
+        }
+
+        .ui-item {
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .heart-icon {
+            color: #e74c3c;
+            font-size: 1.2em;
         }
     </style>
 </head>
 
 <body>
+    <!-- NOVO: Contêiner para a interface do usuário (vidas) -->
+    <div class="ui-container">
+        <div class="ui-title">STATUS</div>
+        <div class="ui-item">
+            <span class="heart-icon">❤</span>
+            <span id="player-lives">Vidas: 3</span>
+        </div>
+    </div>
+
     <div id="timer-display">2:00</div>
     <!-- Elemento HTML para a caixa de log de eventos -->
     <div id="event-log"></div>
     <canvas id="gameCanvas"></canvas>
+    <!-- Mudei a importação para main.js para refletir a nova estrutura -->
     <script type="module" src="./main.js"></script>
 </body>
 

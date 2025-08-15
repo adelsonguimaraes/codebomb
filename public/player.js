@@ -1,6 +1,11 @@
-// player.js - Classe do jogador e input
+// player.js - Lógica do jogador e input
 import { LARGURA_MAPA, ALTURA_MAPA, TAMANHO_BLOCO, mapa, Block } from './map.js';
 import { bombas, Bomb } from './bomb.js';
+import { GameManager } from './game.js';
+
+// NOVO: Constantes para configurar a vida e a invencibilidade
+const VIDAS_INICIAIS = 2; // Quantidade de vidas do jogador
+const TEMPO_INVENCIBILIDADE = 1.5 * 60; // 1.5 segundos de invencibilidade (em frames, 60 fps)
 
 export const teclasPressionadas = {};
 
@@ -25,6 +30,41 @@ export class Player {
         this.maxBombas = 1;
         this.bombasAtivas = 0;
         this.explosionRadius = 1;
+
+        // Propriedades de vida e dano
+        this.vidas = VIDAS_INICIAIS;
+        this.invincibilityTimer = 0; // Temporizador em frames
+        this.isAtivo = true; // Estado de vida do jogador
+    }
+
+    // Método para o jogador tomar dano
+    takeDamage() {
+        // Se o jogador já está invencível ou inativo, não toma mais dano
+        if (this.invincibilityTimer > 0 || !this.isAtivo) {
+            return false;
+        }
+
+        // CORREÇÃO: A mensagem de log agora está aqui, garantindo que seja
+        // exibida apenas uma vez quando o dano é realmente aplicado.
+        this.vidas--;
+
+        // this.logEvent(`Jogador ${player.id}  dano de uma explosão! Vidas restantes: ${player.vidas}`);
+
+        this.invincibilityTimer = TEMPO_INVENCIBILIDADE;
+
+        if (this.vidas <= 0) {
+            this.isAtivo = false;
+            return true; // Retorna true se o jogador morreu
+        }
+
+        return false; // Retorna false se o jogador ainda está vivo
+    }
+
+    // Método para atualizar o estado do jogador a cada frame
+    update() {
+        if (this.invincibilityTimer > 0) {
+            this.invincibilityTimer--;
+        }
     }
 
     // O método agora verifica se o novo bloco no grid é válido
@@ -47,6 +87,13 @@ export class Player {
     }
 
     mover() {
+        // O jogador só para de se mover se estiver inativo (morto).
+        if (!this.isAtivo) {
+            this.targetX = this.x;
+            this.targetY = this.y;
+            return;
+        }
+
         const playerGridXAnterior = this.gridX;
         const playerGridYAnterior = this.gridY;
 

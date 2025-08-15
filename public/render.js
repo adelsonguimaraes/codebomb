@@ -2,6 +2,9 @@
 import { TAMANHO_BLOCO, LARGURA_MAPA, ALTURA_MAPA, fechamentoNivel } from './map.js';
 import { Block } from './powerup.js'; // A classe Block agora é importada de powerup.js
 
+// Constante para controlar a velocidade do piscar
+const TEMPO_PISCAR = 5;
+
 // Função principal de desenho
 export function desenharTudo(ctx, mapa, players, bombas, explosoes, powerups, enemies, arenaFechando, areaPiscaTimer) {
     desenharFundo(ctx, LARGURA_MAPA, ALTURA_MAPA);
@@ -95,6 +98,19 @@ function desenharAreasDeFechamento(ctx, arenaFechando, areaPiscaTimer) {
 
 function desenharPlayers(ctx, players) {
     players.forEach(player => {
+        // NOVO: Se o jogador não estiver ativo (sem vidas), não o desenha.
+        if (!player.isAtivo) {
+            return;
+        }
+
+        // Lógica para o efeito de piscar
+        if (player.invincibilityTimer > 0) {
+            // Se o temporizador estiver ativo, desenha o jogador apenas em frames alternados
+            const deveDesenhar = Math.floor(player.invincibilityTimer / TEMPO_PISCAR) % 2 === 0;
+            if (!deveDesenhar) {
+                return; // Pula o desenho do jogador neste frame
+            }
+        }
         // Desenha o corpo do jogador
         ctx.beginPath();
         ctx.arc(player.x, player.y, player.tamanho / 2, 0, Math.PI * 2, false);

@@ -5,7 +5,7 @@ import { bombas, explosoes, atualizarBombas, atualizarExplosoes, plantarBomba } 
 import { desenharTudo } from './render.js';
 import { Enemy } from './enemy.js';
 import { ExplosionRadiusPowerup, SpeedPowerup, BombCountPowerup } from './powerup.js';
-
+import { updateLivesDisplay } from './ui.js'; // NOVO: Importa a função para atualizar a interface de vidas
 
 // Constantes e variáveis de estado do jogo
 const ZOOM_NIVEL = 1.5;
@@ -18,6 +18,12 @@ const TEMPO_TOTAL_SEGUNDOS = 120;
 // Configuração dos inimigos
 const ENABLE_ENEMIES = true;
 const NUMBER_OF_ENEMIES = 3;
+
+const DEATH_REASONS = {
+    explosion: "foi derrotado por uma explosão!",
+    enemy: "foi derrotado por um inimigo!",
+    smash: "foi esmagado pelo fechamento da arena!"
+};
 
 export class GameManager {
     constructor(canvas) {
@@ -42,12 +48,17 @@ export class GameManager {
         this.areaPiscaTimer = -1;
         this.tempoRestante = TEMPO_TOTAL_SEGUNDOS * 60;
         this.fechamentoAvisoFeito = false;
+        this.players = []; // Reset players
+        this.enemies = []; // Reset enemies
 
         const posicaoInicial = encontrarPosicaoInicialSegura();
         const posicoesJogadores = [{ x: posicaoInicial.x, y: posicaoInicial.y }];
 
         const player1 = new Player(1, posicaoInicial.x * TAMANHO_BLOCO, posicaoInicial.y * TAMANHO_BLOCO);
         this.players.push(player1);
+
+        // NOVO: Inicializa o display de vidas do jogador
+        updateLivesDisplay(player1.vidas);
 
         let posicoesEntidades = [...posicoesJogadores];
         if (ENABLE_ENEMIES) {
@@ -67,38 +78,27 @@ export class GameManager {
         this.logEvent('Jogo iniciado! Prepare-se para a batalha!');
     }
 
-    // NOVO: Método para logar eventos na caixa de mensagens
     logEvent(message) {
         if (this.eventLogElement) {
-            // Torna todas as mensagens existentes em "antigas"
             Array.from(this.eventLogElement.children).forEach(p => {
                 p.classList.add('old-message');
             });
-
-            // Cria um novo parágrafo para a mensagem
             const messageElement = document.createElement('p');
             messageElement.textContent = message;
-
-            // Adiciona a mensagem ao início da lista (mas com flex-direction-reverse, ela aparecerá no final visualmente)
             this.eventLogElement.prepend(messageElement);
-
-            // Mantém o número máximo de mensagens
             while (this.eventLogElement.children.length > this.maxLogMessages) {
                 this.eventLogElement.removeChild(this.eventLogElement.lastChild);
             }
         }
     }
 
-    // Lógica para destruir power-ups atingidos por explosões
     verificarDestruicaoPowerups() {
         for (let i = powerups.length - 1; i >= 0; i--) {
             const powerup = powerups[i];
             const powerupGridX = Math.floor(powerup.x / TAMANHO_BLOCO);
             const powerupGridY = Math.floor(powerup.y / TAMANHO_BLOCO);
 
-            // Verifica se o power-up está na mesma célula de alguma explosão ativa
             const atingido = explosoes.some(exp => {
-                // A explosão atinge o powerup apenas se o timer de imunidade dele for 0
                 if (Math.floor(exp.x / TAMANHO_BLOCO) === powerupGridX && Math.floor(exp.y / TAMANHO_BLOCO) === powerupGridY && powerup.immunityTimer <= 0) {
                     return true;
                 }
@@ -113,15 +113,28 @@ export class GameManager {
     }
 
     // NOVO: Método para destruir entidades que são "esmagadas" pelos blocos de fechamento da arena.
-    // Ele será chamado no gameLoop após fecharArena() ser executado.
     destruirEntidadesPorFechamento(novosFechamentos) {
         if (!novosFechamentos || novosFechamentos.length === 0) return;
+
+        // Verifica jogadores
+        this.players.forEach(player => {
+            const playerGridX = player.gridX;
+            const playerGridY = player.gridY;
+
+            if (novosFechamentos.some(f => f.x === playerGridX && f.y === playerGridY)) {
+                this.logEvent(`Jogador ${player.id} ${DEATH_REASONS.smash}`);
+
+                player.takeDamage();
+                player.takeDamage();
+                player.takeDamage();
+            }
+        });
 
         // Verifica inimigos
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
-            const enemyGridX = Math.floor(enemy.x / TAMANHO_BLOCO);
-            const enemyGridY = Math.floor(enemy.y / TAMANHO_BLOCO);
+            const enemyGridX = enemy.gridX;
+            const enemyGridY = enemy.gridY;
 
             if (novosFechamentos.some(f => f.x === enemyGridX && f.y === enemyGridY)) {
                 this.logEvent(`Um inimigo foi esmagado pelo fechamento da arena!`);
@@ -140,12 +153,42 @@ export class GameManager {
                 powerups.splice(i, 1);
             }
         }
-
-        // LÓGICA FUTURA: Adicione a verificação para os jogadores aqui, se necessário.
-        // Por exemplo:
-        // this.players.forEach(player => { ... });
     }
 
+    // NOVO: Função para checar se o jogador foi atingido por uma explosão
+    verificarDanoJogadorExplosao() {
+        this.players.forEach(player => {
+            if (!player.isAtivo) return;
+
+            const playerGridX = player.gridX;
+            const playerGridY = player.gridY;
+
+            const atingido = explosoes.some(exp => {
+                return (Math.floor(exp.x / TAMANHO_BLOCO) === playerGridX && Math.floor(exp.y / TAMANHO_BLOCO) === playerGridY);
+            });
+
+            if (atingido && player.takeDamage())
+                this.logEvent(`Jogador ${player.id} ${DEATH_REASONS.explosion}`);
+
+        });
+    }
+
+    // NOVO: Função para checar se o jogador colidiu com um inimigo
+    verificarDanoJogadorInimigo() {
+        this.players.forEach(player => {
+            // Se o jogador já está morto, não precisamos verificar
+            if (!player.isAtivo) return;
+
+            // Loop através de todos os inimigos
+            this.enemies.forEach(enemy => {
+                // Checa a colisão pelo grid
+                if (player.gridX === enemy.gridX && player.gridY === enemy.gridY) {
+                    if (player.takeDamage())
+                        this.logEvent(`Jogador ${player.id} ${DEATH_REASONS.enemy}`);
+                }
+            });
+        });
+    }
 
     atualizarEstado() {
         if (this.tempoRestante > 0) {
@@ -180,21 +223,18 @@ export class GameManager {
                     powerups.splice(i, 1);
                 }
             }
+            // NOVO: Atualiza o estado de invencibilidade do player
+            player.update();
         });
 
-        // NOVO: Verifica colisão entre inimigos e explosões
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
-
-            // Move o inimigo
             enemy.mover();
 
-            // Verifica se o inimigo colidiu com alguma explosão
             const atingido = explosoes.some(exp => {
                 return (Math.floor(exp.x / TAMANHO_BLOCO) === enemy.gridX && Math.floor(exp.y / TAMANHO_BLOCO) === enemy.gridY);
             });
 
-            // Se o inimigo foi atingido, ele toma dano
             if (atingido) {
                 const isDefeated = enemy.takeDamage();
                 if (isDefeated) {
@@ -203,6 +243,10 @@ export class GameManager {
                 }
             }
         }
+
+        // NOVO: Chamamos as novas funções de verificação de dano
+        this.verificarDanoJogadorExplosao();
+        this.verificarDanoJogadorInimigo();
 
         atualizarBombas();
         atualizarExplosoes();
@@ -230,10 +274,7 @@ export class GameManager {
                 } else {
                     const tamanhoAtualArena = LARGURA_MAPA - 2 * fechamentoNivel;
                     if (tamanhoAtualArena > TAMANHO_MINIMO_ARENA) {
-                        // AQUI ESTÁ A MUDANÇA:
-                        // 1. Chamamos a função fecharArena e guardamos as coordenadas dos novos blocos.
                         const novosFechamentos = fecharArena();
-                        // 2. Passamos essas coordenadas para a nova função que destrói as entidades.
                         this.destruirEntidadesPorFechamento(novosFechamentos);
 
                         this.fechamentoTimer = TEMPO_ENTRE_FECHAMENTOS_SEGUNDOS * 60;
@@ -243,6 +284,12 @@ export class GameManager {
                     }
                 }
             }
+        }
+
+        // NOVO: Chama a função para atualizar o display de vidas do jogador
+        // Isso garante que a UI seja sincronizada com o estado atual do jogador.
+        if (this.players.length > 0) {
+            updateLivesDisplay(this.players[0].vidas);
         }
     }
 
