@@ -100,10 +100,10 @@ export class Enemy {
         const playerDistanceBlocks = distGridX + distGridY;
 
         // Lógica de irritação
-        if (playerDistanceBlocks <= 2) {
+        if (playerDistanceBlocks <= 2 && this.player.isAtivo) {
             this.isIrritated = true;
         }
-        if (playerDistanceBlocks >= 3) {
+        if (playerDistanceBlocks >= 3 || !this.player.isAtivo) {
             this.isIrritated = false;
         }
 
