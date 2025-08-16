@@ -145,23 +145,41 @@ export class GameManager {
         }
     }
 
-    _verificarDano() {
+    // NOVO: Método privado para lidar com a lógica de dano e colisão
+    _handleDamage() {
         this.players.forEach(player => {
             if (!player.isAtivo) return;
-            const playerGridX = player.gridX;
-            const playerGridY = player.gridY;
+
+            // Checa colisão com explosões
             const atingidoPorExplosao = explosoes.some(exp => {
-                return (Math.floor(exp.x / TAMANHO_BLOCO) === playerGridX && Math.floor(exp.y / TAMANHO_BLOCO) === playerGridY);
+                return (Math.floor(exp.x / TAMANHO_BLOCO) === player.gridX && Math.floor(exp.y / TAMANHO_BLOCO) === player.gridY);
             });
             if (atingidoPorExplosao) {
                 player.takeDamage();
             }
+
+            // Checa colisão com inimigos
             this.enemies.forEach(enemy => {
                 if (player.gridX === enemy.gridX && player.gridY === enemy.gridY) {
                     player.takeDamage();
                 }
             });
         });
+
+        // Checa dano nos inimigos por explosões
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            const atingido = explosoes.some(exp => {
+                return (Math.floor(exp.x / TAMANHO_BLOCO) === enemy.gridX && Math.floor(exp.y / TAMANHO_BLOCO) === enemy.gridY);
+            });
+            if (atingido) {
+                const isDefeated = enemy.takeDamage();
+                if (isDefeated) {
+                    this.logEvent(`Inimigo derrotado!`);
+                    this.enemies.splice(i, 1);
+                }
+            }
+        }
     }
 
     _handleArenaClosing() {
@@ -222,33 +240,22 @@ export class GameManager {
     }
 
     atualizarEstado() {
-        // NOVO: Chama o novo método para lidar com power-ups
-        this._handlePowerups();
-
         this.players.forEach(player => {
             player.mover();
             player.update();
         });
 
-        for (let i = this.enemies.length - 1; i >= 0; i--) {
-            const enemy = this.enemies[i];
+        this.enemies.forEach(enemy => {
             enemy.mover();
-            const atingido = explosoes.some(exp => {
-                return (Math.floor(exp.x / TAMANHO_BLOCO) === enemy.gridX && Math.floor(exp.y / TAMANHO_BLOCO) === enemy.gridY);
-            });
-            if (atingido) {
-                const isDefeated = enemy.takeDamage();
-                if (isDefeated) {
-                    this.logEvent(`Inimigo derrotado!`);
-                    this.enemies.splice(i, 1);
-                }
-            }
-        }
+        });
 
-        this._verificarDano();
+        // NOVO: Chama o novo método para lidar com dano e colisão
+        this._handleDamage();
+
         atualizarBombas();
         atualizarExplosoes();
         this.verificarDestruicaoPowerups();
+        this._handlePowerups();
 
         if (teclasPressionadas[' '] && this.players[0].bombasAtivas < this.players[0].maxBombas) {
             plantarBomba(this.players[0], this.logEvent.bind(this));
